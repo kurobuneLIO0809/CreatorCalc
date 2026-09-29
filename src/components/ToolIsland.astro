@@ -1,0 +1,36 @@
+---
+/**
+ * Renders the interactive app for a tool. Each component is imported statically so Astro
+ * can create a separate, lazily-loaded bundle per tool.
+ */
+import CompressorTool from '../tools/CompressorTool';
+import TargetSizeTool from '../tools/TargetSizeTool';
+import ResizerTool from '../tools/ResizerTool';
+import ConverterTool from '../tools/ConverterTool';
+import ImageToPdfTool from '../tools/ImageToPdfTool';
+import CropperTool from '../tools/CropperTool';
+import RotateTool from '../tools/RotateTool';
+import ExifViewerTool from '../tools/ExifViewerTool';
+import RemoveExifTool from '../tools/RemoveExifTool';
+import type { ToolSlug } from '../data/tools';
+
+interface Props {
+  slug: ToolSlug;
+}
+const { slug } = Astro.props;
+const converters = ['image-converter', 'heic-to-jpg', 'webp-to-jpg', 'png-to-jpg', 'jpg-to-png', 'image-to-webp'] as const;
+const converterId = (converters as readonly string[]).includes(slug) ? (slug as (typeof converters)[number]) : null;
+---
+
+{slug === 'image-compressor' && <CompressorTool client:load />}
+{slug === 'compress-image-to-kb' && <TargetSizeTool client:load />}
+{slug === 'image-resizer' && <ResizerTool client:load />}
+{converterId && <ConverterTool client:load id={converterId} />}
+{slug === 'image-to-pdf' && <ImageToPdfTool client:load />}
+{slug === 'image-cropper' && <CropperTool client:load />}
+{slug === 'rotate-image' && <RotateTool client:load />}
+{slug === 'exif-viewer' && <ExifViewerTool client:load />}
+{slug === 'remove-exif' && <RemoveExifTool client:load />}
+<noscript>
+  <p class="notice">This tool runs in your browser and needs JavaScript. Please enable JavaScript to use it.</p>
+</noscript>

@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolGrid from '../components/ToolGrid.astro';
+import { tools } from '../data/tools';
+---
+
+<BaseLayout title="Page not found" description="The page you were looking for does not exist." path="/404" noindex>
+  <div class="container">
+    <header class="page-head">
+      <h1>Page not found</h1>
+      <p class="page-head__lead">This page does not exist (anymore). Here are the tools people use most:</p>
+    </header>
+    <ToolGrid tools={tools.filter((t) => t.popular)} />
+    <p><a href="/tools">See all tools →</a></p>
+  </div>
+</BaseLayout>

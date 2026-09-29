@@ -1,0 +1,65 @@
+---
+import { site } from '../config/site';
+const path = Astro.url.pathname.replace(/\.html$/, '');
+const nav = [
+  { href: '/tools', label: 'All tools', optional: false },
+  { href: '/methodology', label: 'How it works', optional: true },
+  { href: '/privacy', label: 'Privacy', optional: true },
+];
+---
+
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a class="brand" href="/" aria-label={`${site.name} home`}>
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <rect class="brand__bg" width="32" height="32" rx="8"></rect>
+        <path class="brand__fg" d="M9 12h11l-3-3M23 20H12l3 3" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+      <span>{site.name}</span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      {
+        nav.map((item) => (
+          <a href={item.href} class={item.optional ? 'nav-optional' : undefined} aria-current={path === item.href ? 'page' : undefined}>
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+    <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Colour theme: system">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path></svg>
+    </button>
+  </div>
+</header>
+
+<script>
+  const button = document.getElementById('theme-toggle');
+  const order = ['system', 'dark', 'light'] as const;
+  type Mode = (typeof order)[number];
+  const read = (): Mode => {
+    try {
+      const v = localStorage.getItem('theme');
+      return v === 'dark' || v === 'light' ? v : 'system';
+    } catch {
+      return 'system';
+    }
+  };
+  const apply = (mode: Mode) => {
+    if (mode === 'system') delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = mode;
+    button?.setAttribute('aria-label', `Colour theme: ${mode}. Click to change.`);
+    button?.setAttribute('title', `Theme: ${mode}`);
+  };
+  apply(read());
+  button?.addEventListener('click', () => {
+    const next = order[(order.indexOf(read()) + 1) % order.length];
+    try {
+      if (next === 'system') localStorage.removeItem('theme');
+      else localStorage.setItem('theme', next);
+    } catch {
+      /* storage unavailable: still switch for this page view */
+    }
+    apply(next);
+  });
+</script>

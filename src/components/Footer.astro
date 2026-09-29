@@ -1,0 +1,35 @@
+---
+import { site } from '../config/site';
+import { tools, toolPath } from '../data/tools';
+const popular = tools.filter((t) => t.popular);
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="site-footer__grid">
+      <div>
+        <h2>{site.name}</h2>
+        <p class="muted">{site.tagline}</p>
+      </div>
+      <nav aria-label="Popular tools">
+        <h2>Popular tools</h2>
+        <ul>
+          {popular.map((t) => <li><a href={toolPath(t.slug)}>{t.name}</a></li>)}
+        </ul>
+      </nav>
+      <nav aria-label="Site">
+        <h2>Site</h2>
+        <ul>
+          <li><a href="/tools">All tools</a></li>
+          <li><a href="/methodology">How it works</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/privacy">Privacy policy</a></li>
+          <li><a href="/terms">Terms of use</a></li>
+          <li><a href="/contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+    <p class="site-footer__bottom">© {year} {site.name}. Images are processed in your browser and are not uploaded to our servers.</p>
+  </div>
+</footer>

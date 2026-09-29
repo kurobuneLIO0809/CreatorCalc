@@ -1,0 +1,38 @@
+---
+interface Props {
+  placeholder?: string;
+}
+const { placeholder = 'Search tools, e.g. “heic”, “100kb”, “pdf”' } = Astro.props;
+---
+
+<div class="search" role="search">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"></circle><path d="m20 20-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+  <label for="tool-search" class="visually-hidden">Search tools</label>
+  <input id="tool-search" type="search" autocomplete="off" spellcheck="false" placeholder={placeholder} data-tool-search />
+</div>
+<p class="empty-state" id="search-empty" hidden>No tool matches your search yet. Try “convert”, “resize” or “compress”.</p>
+
+<script>
+  const input = document.querySelector<HTMLInputElement>('[data-tool-search]');
+  const empty = document.getElementById('search-empty');
+  const items = Array.from(document.querySelectorAll<HTMLElement>('[data-tool-grid] [data-search]'));
+  const sections = Array.from(document.querySelectorAll<HTMLElement>('[data-search-section]'));
+  const run = () => {
+    const words = (input?.value ?? '').toLowerCase().split(/\s+/).filter(Boolean);
+    let visible = 0;
+    for (const item of items) {
+      const hay = item.dataset.search ?? '';
+      const match = words.every((w) => hay.includes(w));
+      item.hidden = !match;
+      if (match) visible += 1;
+    }
+    for (const s of sections) s.hidden = words.length > 0 && !s.querySelector('[data-search]:not([hidden])');
+    if (empty) empty.hidden = visible > 0;
+  };
+  input?.addEventListener('input', run);
+  const q = new URLSearchParams(location.search).get('q');
+  if (input && q) {
+    input.value = q.slice(0, 60);
+    run();
+  }
+</script>

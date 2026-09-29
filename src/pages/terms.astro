@@ -1,0 +1,47 @@
+---
+import PageLayout from '../layouts/PageLayout.astro';
+import { site } from '../config/site';
+const updated = new Date(site.legalUpdated).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+---
+
+<PageLayout
+  title="Terms of Use"
+  heading="Terms of use"
+  description="The terms for using QuickConvert's free, in-browser image tools."
+  path="/terms"
+  lead={`Last updated: ${updated}`}
+>
+  <h2>1. The service</h2>
+  <p>
+    {site.name} provides free tools that process image files in your web browser. You may use them for personal and commercial purposes without an account. We may add, change or remove tools at any time.
+  </p>
+
+  <h2>2. Your content</h2>
+  <p>
+    You keep all rights to the files you process. Because processing happens on your device, we never receive or store your files. You are responsible for having the right to use and modify the files you open, and for how you use the results.
+  </p>
+
+  <h2>3. Acceptable use</h2>
+  <p>Do not use the site to break the law, to infringe other people’s rights, or to attempt to disrupt, overload or attack the website or its hosting infrastructure.</p>
+
+  <h2>4. No warranty</h2>
+  <p>
+    The tools are provided “as is” and “as available”, without warranties of any kind. Image conversion and compression can change files (for example lossy compression, colour conversion or removal of metadata, as described on each tool page and on the <a href="/methodology">methodology page</a>). Always keep your original files, and check results before relying on them — especially for official submissions.
+  </p>
+
+  <h2>5. Limitation of liability</h2>
+  <p>
+    To the maximum extent permitted by law, we are not liable for any indirect, incidental or consequential damages, or for loss of data, arising from your use of the site. Nothing in these terms limits liability that cannot be limited by law.
+  </p>
+
+  <h2>6. Third-party software</h2>
+  <p>
+    The tools include open-source components under their own licences (listed on the <a href="/methodology#open-source">methodology page</a>). The HEIC decoder is licensed under the LGPL-3.0 and is served as a separate, unmodified file; its source code is available from the linked project.
+  </p>
+
+  <h2>7. Changes</h2>
+  <p>We may update these terms. The date above shows when they last changed. Continuing to use the site after a change means you accept the updated terms.</p>
+
+  <h2>8. Contact</h2>
+  <p>See the <a href="/contact">contact page</a>.</p>
+</PageLayout>

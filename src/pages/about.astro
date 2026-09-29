@@ -1,0 +1,42 @@
+---
+import PageLayout from '../layouts/PageLayout.astro';
+import { site } from '../config/site';
+import { tools } from '../data/tools';
+---
+
+<PageLayout
+  title="About QuickConvert – Free, Private Image Tools"
+  heading={`About ${site.name}`}
+  description="Why QuickConvert exists: simple, free image tools that work without accounts, limits or uploads, and are honest about what they do."
+  path="/about"
+  lead="Simple file tools that respect your time and your privacy."
+>
+  <p>
+    Most online converters ask you to upload your photos to their servers, wait, and then download them again — often with daily limits, sign-up walls or watermarks. For many everyday tasks that is unnecessary: modern browsers can decode, edit and encode images on your own device, quickly and privately.
+  </p>
+  <p>
+    {site.name} is a collection of {tools.length} focused image tools built on that idea. Each tool does one job, explains its limitations honestly, and processes your files locally.
+  </p>
+
+  <h2>Principles</h2>
+  <ul>
+    <li><strong>Local first.</strong> If a task can be done in the browser, it is done in the browser. We do not claim “no upload” for anything we cannot back up in code.</li>
+    <li><strong>Free and account-free.</strong> No sign-up, no watermarks, no artificial daily limits.</li>
+    <li><strong>Honest results.</strong> If compressing would make a file bigger, you get the original back. If a conversion cannot do what people often expect (for example JPG to PNG does not add transparency), the page says so.</li>
+    <li><strong>Works on phones.</strong> Every tool is designed for touch screens and small displays as well as desktops.</li>
+    <li><strong>Few, good tools.</strong> We add tools when people need them, not to fill the site with pages.</li>
+  </ul>
+
+  <h2>How the site is funded</h2>
+  <p>
+    Because files are processed on your device, running the site costs very little. It is currently ad-free. In future we may show a limited number of clearly separated ads to cover costs; the tools themselves will stay free, and ads will never have access to your files.
+  </p>
+
+  <h2>Open source and licences</h2>
+  <p>
+    The site is built with open-source software. The source code is on <a href={site.sourceUrl} rel="noopener">GitHub</a>, and third-party components and their licences are listed on the <a href="/methodology#open-source">methodology page</a>.
+  </p>
+
+  <h2>Feedback</h2>
+  <p>Found a bug, or need a tool we do not have? <a href="/contact">Tell us</a> — requests directly shape what we build next.</p>
+</PageLayout>

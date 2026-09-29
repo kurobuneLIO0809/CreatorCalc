@@ -1,0 +1,28 @@
+---
+import PageLayout from '../layouts/PageLayout.astro';
+import { site } from '../config/site';
+---
+
+<PageLayout
+  title="Contact"
+  heading="Contact"
+  description="How to report a bug, request a new tool or ask a question about QuickConvert."
+  path="/contact"
+  lead="Bug reports and tool requests are very welcome."
+>
+  <h2>Report a problem or request a tool</h2>
+  <p>
+    Please open an issue on our public issue tracker: <a href={site.contactUrl} rel="noopener">{site.contactUrl.replace('https://', '')}</a>. Describe what you tried, which browser and device you used, and what happened.
+  </p>
+  <div class="callout">
+    <p>
+      <strong>Please do not attach private photos.</strong> Issues are public. If a specific file causes a problem, describe it (format, size, dimensions, where it came from) or share a file that contains nothing personal.
+    </p>
+  </div>
+
+  <h2>Before you write</h2>
+  <ul>
+    <li>Questions about formats, limits and quality are answered on the <a href="/methodology">methodology page</a> and in the FAQ on each tool page.</li>
+    <li>Questions about data: see the <a href="/privacy">privacy policy</a>. In short, we never receive your files.</li>
+  </ul>
+</PageLayout>
