@@ -76,6 +76,9 @@ BASE_URL=https://<preview>.pages.dev npm run test:e2e   # run the E2E suite agai
 npm run verify               # all of the above
 ```
 
+`npm run preview:relative -- <outDir>` writes a copy of `dist/` with relative URLs that works under any
+sub-path (used for the private claude.ai Artifact preview; downloads are blocked inside that preview frame).
+
 E2E tests need a Chromium. In Claude Code cloud sessions the pre-installed one is used automatically; elsewhere
 run `npx playwright install chromium` once. `npm run og` regenerates Open Graph images and icons (committed in
 `public/`).

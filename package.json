@@ -17,7 +17,8 @@
     "test:e2e": "playwright test",
     "og": "node scripts/generate-og.mjs",
     "verify": "npm run check && npm test && npm run build && npm run test:e2e",
-    "gsc": "node scripts/gsc/analyze.mjs"
+    "gsc": "node scripts/gsc/analyze.mjs",
+    "preview:relative": "node scripts/build-preview.mjs"
   },
   "repository": {
     "type": "git",
