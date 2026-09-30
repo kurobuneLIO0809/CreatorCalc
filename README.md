@@ -1,10 +1,10 @@
-# QuickConvert
+# Wrenfile
 
 **Free image tools. No account. Files stay on your device.**
 
-QuickConvert (provisional name) is a static website of image tools that run entirely in the browser:
-compress, compress to an exact KB size, resize, convert (HEIC, WebP, PNG, JPG, AVIF…), image → PDF, crop,
-rotate, and view/remove EXIF metadata. There is no backend, no database, no upload endpoint and no paid API,
+Wrenfile is a static website of image tools that run entirely in the browser:
+compress, compress to an exact KB size, resize, convert (WebP, PNG, JPG, AVIF…), image → PDF, crop,
+rotate, and view/remove EXIF metadata. (Renamed from the working title "QuickConvert", see docs/strategy.md §9.) There is no backend, no database, no upload endpoint and no paid API,
 so it can be hosted for free on Cloudflare Pages.
 
 - Why this product and these tools: [docs/strategy.md](docs/strategy.md)
@@ -28,7 +28,7 @@ Content-Security-Policy that blocks connections to other origins.
 | Compress to exact KB | `/tools/compress-image-to-kb` | Binary search on quality + proportional downscale; 1 KB = 1,000 bytes (safe for both conventions) |
 | Image Resizer | `/tools/image-resizer` | Pixels (fit/stretch), percentage, presets, no-upscale option, multi-step high-quality downscaling |
 | Image Converter | `/tools/image-converter` | Any supported input → JPG/PNG/WebP |
-| HEIC to JPG | `/tools/heic-to-jpg` | Native decode on Safari, lazy libheif (heic-to, LGPL) elsewhere |
+| HEIC to JPG | `/tools/heic-to-jpg` | **Disabled for launch** (`features.heicDecoder`); native decode on Safari, lazy libheif elsewhere when enabled |
 | WebP to JPG | `/tools/webp-to-jpg` | Background colour for transparency, PNG option |
 | PNG to JPG | `/tools/png-to-jpg` | Background colour choice |
 | JPG to PNG | `/tools/jpg-to-png` | Honest explanation of what PNG does/doesn't do |
@@ -147,10 +147,12 @@ only on those pages, and update the privacy policy and consent handling first. S
 
 ## Configuration notes
 
-- Brand name and limits: `src/config/site.ts`. "QuickConvert" is already used by ≥ 7 unrelated conversion
-  products — rename before launch (shortlist in docs/strategy.md §9), then run `npm run og`.
-- `features.heicDecoder` in `src/config/site.ts`: set to `false` to ship without the LGPL/HEVC decoder
-  (removes the HEIC to JPG page and its links; see docs/strategy.md §11).
+- Brand name and limits: `src/config/site.ts` (after changing the name, run `npm run og`).
+- `features.heicDecoder` in `src/config/site.ts` is **`false` for launch**: HEIC is not supported, the
+  LGPL/HEVC decoder is not bundled (enforced by the post-build check), the HEIC to JPG page and all HEIC claims
+  are removed. Setting it to `true` restores everything (see docs/strategy.md §11, roadmap R8).
+- `npm run gsc -- <export-folder>` analyses a Search Console export and applies the expansion rules in
+  docs/roadmap.md (Phase 2).
 - Licence notices for all client-side code are generated into `dist/third-party-licenses.txt` at build time.
 - Contact channel: `site.contactUrl` (currently the GitHub issue tracker; set a support email before applying
   for AdSense).

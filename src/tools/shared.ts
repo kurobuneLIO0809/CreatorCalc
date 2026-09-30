@@ -1,11 +1,13 @@
+import { features } from '../config/site';
 import { FORMAT_INFO, formatLabel, type DetectedFormat, type OutputFormat } from '../lib/format';
 import { outputName } from '../lib/filename';
 import type { ItemResult } from '../components/tool-ui/useBatch';
 import type { PipelineResult } from '../services/types';
 
-export const RASTER_INPUTS: readonly DetectedFormat[] = ['jpeg', 'png', 'webp', 'gif', 'bmp', 'avif', 'heic'];
-export const RASTER_ACCEPT_ATTR = 'image/*,.heic,.heif,.avif';
-export const RASTER_HINT = 'JPG, PNG, WebP, HEIC, AVIF, GIF, BMP';
+const HEIC = features.heicDecoder;
+export const RASTER_INPUTS: readonly DetectedFormat[] = ['jpeg', 'png', 'webp', 'gif', 'bmp', 'avif', ...(HEIC ? (['heic'] as const) : [])];
+export const RASTER_ACCEPT_ATTR = HEIC ? 'image/*,.heic,.heif,.avif' : 'image/*,.avif';
+export const RASTER_HINT = HEIC ? 'JPG, PNG, WebP, HEIC, AVIF, GIF, BMP' : 'JPG, PNG, WebP, AVIF, GIF, BMP';
 
 export const OUTPUT_OPTIONS: Array<{ value: OutputFormat; label: string }> = [
   { value: 'jpeg', label: 'JPG' },

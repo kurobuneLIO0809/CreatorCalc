@@ -5,16 +5,16 @@ decision. Nothing here costs money. Do them in order.
 
 ## A. Decisions before launch
 
-- [ ] **Brand name.** "QuickConvert" collides with ≥ 7 same-category products (docs/strategy.md §9).
-      Pick a name (shortlist: Pixwren, Pixfinch, Nookpix, Pixlark, Wrenfile), check it at a registrar and in a
-      trademark database (USPTO, EUIPO, J-PlatPat). Then:
-  - [ ] set `name` (and `tagline` if needed) in `src/config/site.ts`
-  - [ ] run `npm run og` (regenerates OG images/icons with the new name) and commit
-  - [ ] optionally rename the Cloudflare project (`name` in `wrangler.toml`)
-  - Buying a domain is optional for launch; the free `*.pages.dev` subdomain works.
-- [ ] **HEIC decoder** (docs/strategy.md §11): keep `features.heicDecoder = true`, or set it to `false`
-      if you do not want to accept the HEVC patent grey area. If `false`, also review copy that mentions the
-      bundled decoder in `src/data/content.ts` (compress-to-KB, converter, image-to-PDF pages).
+- [x] **Brand name: Wrenfile** (set in `src/config/site.ts`, OG images regenerated, `wrangler.toml` name
+      `wrenfile`). Still to do yourself: a trademark search (USPTO, EUIPO, J-PlatPat) and, if you want a
+      domain later, check `wrenfile.com` / `.app` at a registrar (DNS showed no records for `wrenfile.com` and
+      `wrenfile.app` on 2026-09-30 — not a guarantee they are free). Buying a domain is optional; the free
+      `*.pages.dev` subdomain works.
+- [ ] Create the Cloudflare project with the name `wrenfile` if available (→ `https://wrenfile.pages.dev`).
+      If that name is taken, Cloudflare assigns another subdomain — use exactly that URL for `SITE_URL`.
+- [x] **HEIC decoder: disabled** (`features.heicDecoder = false`). HEIC files get a clear message, the
+      decoder is not shipped (checked at build), the HEIC to JPG page and HEIC claims are removed. Revisit with
+      roadmap rule R8.
 - [ ] **Contact channel.** `site.contactUrl` points to the GitHub issue tracker. If the repository is
       private, visitors cannot open issues — make it public, or set up a free email alias (e.g. Cloudflare
       Email Routing on a custom domain, or a free mailbox) and change the contact page.
@@ -25,7 +25,7 @@ decision. Nothing here costs money. Do them in order.
 
 ```bash
 npm ci
-SITE_URL=https://<project>.pages.dev npm run build   # must end with "postbuild: OK"
+SITE_URL=https://wrenfile.pages.dev npm run build   # must end with "postbuild: OK"
 npm test && npm run check
 npx playwright install chromium    # once, outside Claude cloud sessions
 npm run test:e2e
@@ -54,10 +54,10 @@ npm run test:e2e
 
 ## E. Real devices (cannot be automated here)
 
-- [ ] **iPhone Safari:** HEIC → JPG from the Photos picker; JPG → WebP (file must be `.webp` and open);
+- [ ] **iPhone Safari:** pick a photo from the Photos library in Compress-to-KB (iOS should hand over a JPG; if it passes HEIC, the "not supported yet" message must appear); JPG → WebP (file must be `.webp` and open);
       compress a 48 MP photo if available (should show "reduced to fit memory" note, not crash); download and
       ZIP save to Files; crop by dragging handles; dark mode.
-- [ ] **Android Chrome:** same flows, plus HEIC → JPG (bundled decoder).
+- [ ] **Android Chrome:** same flows.
 - [ ] **Desktop Firefox:** one converter, crop, image to PDF.
 - [ ] Report anything broken as an issue before announcing the site.
 
@@ -68,8 +68,8 @@ npm run test:e2e
   - HTML file: put the file Google gives you into `public/` and redeploy.
   - HTML tag: add the `<meta name="google-site-verification" …>` tag to `src/layouts/BaseLayout.astro` `<head>`.
 - [ ] Submit `sitemap-index.xml`.
-- [ ] URL Inspection → Request indexing for: compress-image-to-kb, image-compressor, heic-to-jpg (if enabled),
-      image-to-pdf, remove-exif.
+- [ ] URL Inspection → Request indexing for: compress-image-to-kb, image-compressor, image-to-pdf,
+      remove-exif, webp-to-jpg.
 - [ ] Start the weekly review from docs/roadmap.md ("First 90 days").
 
 ## G. Do NOT do at launch

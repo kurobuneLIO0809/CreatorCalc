@@ -1,6 +1,6 @@
 ---
 import PageLayout from '../layouts/PageLayout.astro';
-import { limits, site } from '../config/site';
+import { features, limits, site } from '../config/site';
 ---
 
 <PageLayout
@@ -20,7 +20,7 @@ import { limits, site } from '../config/site';
   <ol>
     <li>Open your browser’s developer tools (F12, or right-click → Inspect) and switch to the <strong>Network</strong> tab.</li>
     <li>Use any tool with a file.</li>
-    <li>You will see requests for the page’s own code (for example the HEIC decoder or WebP encoder, which are downloaded <em>to</em> your browser the first time they are needed) but no request that sends your file anywhere.</li>
+    <li>You will see requests for the page’s own code (for example the WebP encoder or PDF library, which are downloaded <em>to</em> your browser the first time they are needed) but no request that sends your file anywhere.</li>
   </ol>
   <p>
     As an extra safeguard, every page is served with a <strong>Content Security Policy</strong> whose <code>connect-src</code> directive only allows connections to this site itself (plus the optional, cookieless Cloudflare Web Analytics beacon, which receives page-view data only). Even a bug could not send a file to a third-party server. Form submissions are disabled entirely with <code>form-action 'none'</code>.
@@ -29,7 +29,7 @@ import { limits, site } from '../config/site';
   <h2 id="detection">3. File detection and safety checks</h2>
   <ul>
     <li><strong>Format detection by content.</strong> The first bytes of each file (its “magic number”) decide the format. Extensions and the MIME type reported by the operating system are ignored, so a renamed file cannot pretend to be an image.</li>
-    <li><strong>Size and dimension limits before decoding.</strong> Files larger than {limits.maxFileBytes / 1024 / 1024} MB are rejected. For JPG, PNG, GIF, WebP, BMP, HEIC and AVIF, the pixel dimensions are read from the header first; images over {limits.maxInputPixels / 1e6} megapixels (less on devices that report 4 GB of RAM or less) are rejected before the browser allocates memory (protection against “decompression bombs”).</li>
+    <li><strong>Size and dimension limits before decoding.</strong> Files larger than {limits.maxFileBytes / 1024 / 1024} MB are rejected. For JPG, PNG, GIF, WebP, BMP and AVIF, the pixel dimensions are read from the header first; images over {limits.maxInputPixels / 1e6} megapixels (less on devices that report 4 GB of RAM or less) are rejected before the browser allocates memory (protection against “decompression bombs”).</li>
     <li><strong>No SVG input.</strong> SVG files can contain scripts and external references, so they are not accepted by the raster tools.</li>
     <li><strong>Safe file names.</strong> Output names are derived from your file name with path separators, control characters, invisible bidirectional characters and reserved names removed. The extension is always set by us from the real output format.</li>
     <li><strong>Batch limits.</strong> Up to {limits.maxBatchFiles} files per batch. ZIP downloads are flat (no folders) with de-duplicated names.</li>
@@ -39,7 +39,7 @@ import { limits, site } from '../config/site';
   <table class="spec-table">
     <tbody>
       <tr><th scope="row">JPG, PNG, WebP, GIF, BMP, AVIF</th><td>The browser’s built-in decoder (<code>createImageBitmap</code>). EXIF orientation is applied, so photos appear upright. Animated images use the first frame.</td></tr>
-      <tr><th scope="row">HEIC / HEIF</th><td>The browser/OS decoder when available (Safari on macOS/iOS). Otherwise <a href="https://github.com/strukturag/libheif" rel="noopener">libheif</a> via the open-source <code>heic-to</code> package (LGPL-3.0), compiled to JavaScript and loaded on demand.</td></tr>
+      {features.heicDecoder ? (<tr><th scope="row">HEIC / HEIF</th><td>The browser/OS decoder when available (Safari on macOS/iOS). Otherwise <a href="https://github.com/strukturag/libheif" rel="noopener">libheif</a> via the open-source <code>heic-to</code> package (LGPL-3.0), compiled to JavaScript and loaded on demand.</td></tr>) : (<tr><th scope="row">HEIC / HEIF</th><td>Not supported in this version. The EXIF Viewer can still read metadata from HEIC files, because that does not require decoding the image.</td></tr>)}
       <tr><th scope="row">TIFF</th><td>Only where the browser supports it natively (Safari). Used by the Image Converter and EXIF Viewer.</td></tr>
     </tbody>
   </table>
@@ -86,7 +86,7 @@ import { limits, site } from '../config/site';
   <ul>
     <li><a href="https://github.com/Hopding/pdf-lib" rel="noopener">pdf-lib</a> (MIT) — PDF creation</li>
     <li><a href="https://github.com/jamsinclair/jSquash" rel="noopener">jSquash / libwebp</a> (Apache-2.0 / BSD) — WebP encoding</li>
-    <li><a href="https://github.com/hoppergee/heic-to" rel="noopener">heic-to</a> / <a href="https://github.com/strukturag/libheif" rel="noopener">libheif</a> (LGPL-3.0) — HEIC decoding, served as a separate file built from the unmodified library</li>
+    {features.heicDecoder && (<li><a href="https://github.com/hoppergee/heic-to" rel="noopener">heic-to</a> / <a href="https://github.com/strukturag/libheif" rel="noopener">libheif</a> (LGPL-3.0) — HEIC decoding, served as a separate file built from the unmodified library</li>)}
     <li><a href="https://github.com/MikeKovarik/exifr" rel="noopener">exifr</a> (MIT) — metadata reading</li>
     <li><a href="https://github.com/photopea/UPNG.js" rel="noopener">UPNG.js</a> (MIT) — PNG quantization</li>
     <li><a href="https://github.com/101arrowz/fflate" rel="noopener">fflate</a> (MIT) — ZIP files</li>

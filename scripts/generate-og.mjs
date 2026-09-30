@@ -14,6 +14,7 @@ const { tools } = await import('../src/data/tools.ts').catch(async () => {
 // Brand name comes from src/config/site.ts so a rename only needs `npm run og` afterwards.
 const siteSrc = await (await import('node:fs/promises')).readFile(new URL('../src/config/site.ts', import.meta.url), 'utf8');
 const brand = siteSrc.match(/name: '([^']+)'/)[1];
+const heicEnabled = /heicDecoder:\s*true/.test(siteSrc);
 
 const executablePath = process.env.PW_CHROMIUM_PATH || undefined;
 const browser = await chromium.launch(executablePath ? { executablePath } : {});
@@ -33,7 +34,7 @@ const template = (title, subtitle) => `<!doctype html><html><head><meta charset=
 </style></head><body><div class="brand">${logo}${esc(brand)}</div><div><h1>${esc(title)}</h1><p>${esc(subtitle)}</p>
 <span class="pill">Free · No sign-up · Files stay on your device</span></div></body></html>`;
 
-const jobs = [{ file: 'default', title: 'Free image tools', subtitle: 'Compress, resize, convert HEIC & WebP, make PDFs — right in your browser.' }, ...tools.map((t) => ({ file: t.slug, title: t.name, subtitle: t.tagline }))];
+const jobs = [{ file: 'default', title: 'Free image tools', subtitle: 'Compress, resize, convert WebP, PNG & JPG, make PDFs — right in your browser.' }, ...tools.filter((t) => heicEnabled || t.slug !== 'heic-to-jpg').map((t) => ({ file: t.slug, title: t.name, subtitle: t.tagline }))];
 for (const job of jobs) {
   await page.setContent(template(job.title, job.subtitle));
   await page.screenshot({ path: new URL(`../public/og/${job.file}.png`, import.meta.url).pathname });

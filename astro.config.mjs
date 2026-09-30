@@ -3,12 +3,13 @@ import { defineConfig } from 'astro/config';
 import preact from '@astrojs/preact';
 import sitemap from '@astrojs/sitemap';
 import { tools } from './src/data/tools.ts';
+import { features } from './src/config/site.ts';
 
 /**
  * Canonical origin of the production site. Set SITE_URL in the Cloudflare Pages
- * project settings (e.g. https://quickconvert.pages.dev or a custom domain).
+ * project settings (e.g. https://wrenfile.pages.dev or a custom domain).
  */
-const SITE_URL = (process.env.SITE_URL || 'https://quickconvert.pages.dev').replace(/\/+$/, '');
+const SITE_URL = (process.env.SITE_URL || 'https://wrenfile.pages.dev').replace(/\/+$/, '');
 
 /**
  * Cloudflare Web Analytics (cookieless) can be enabled in the Cloudflare dashboard.
@@ -63,6 +64,8 @@ export default defineConfig({
     },
   },
   vite: {
+    // Compile-time switch: when false, the HEIC decoder import is removed from the bundle entirely.
+    define: { __HEIC_DECODER__: JSON.stringify(features.heicDecoder) },
     build: {
       // Keep WASM and worker files as separate cacheable assets.
       assetsInlineLimit: 0,

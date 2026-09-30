@@ -30,6 +30,11 @@ function looksAnimated(head: Uint8Array, format: DetectedFormat): boolean {
   return false;
 }
 
+declare const __HEIC_DECODER__: boolean;
+
+export const HEIC_UNSUPPORTED =
+  'HEIC (iPhone) photos are not supported yet. On iPhone, share or export the photo as JPG — or set Settings → Camera → Formats → “Most Compatible” so new photos are saved as JPG.';
+
 export class InputError extends Error {
   constructor(
     message: string,
@@ -59,6 +64,7 @@ export async function inspectFile(file: File, accept: readonly DetectedFormat[])
   if (format === 'pdf') throw new InputError('This is a PDF document, not an image.');
   if (format === 'unknown') throw new InputError('This file is not a supported image. Its content does not match any known image format (the file name or extension may be wrong).');
   if (!accept.includes(format)) {
+    if (format === 'heic' && !features.heicDecoder) throw new InputError(HEIC_UNSUPPORTED);
     throw new InputError(`${formatLabel(format)} files are not supported by this tool.`, format);
   }
   const dims = readDimensions(head, format);
@@ -115,9 +121,7 @@ export async function decodeHeic(file: Blob): Promise<ImageBitmap> {
   } catch {
     // Not natively supported — fall through to the bundled decoder.
   }
-  if (!features.heicDecoder) {
-    throw new Error('This browser cannot open HEIC files. Open the photo in Safari (Mac, iPhone, iPad), or set your iPhone camera to “Most Compatible” to save JPGs.');
-  }
+  if (!__HEIC_DECODER__) throw new InputError(HEIC_UNSUPPORTED);
   const { heicTo } = await import('heic-to/csp');
   try {
     return await heicTo({ blob: file, type: 'bitmap', options: { imageOrientation: 'from-image' } });

@@ -59,12 +59,12 @@ test('theme toggle switches and persists', async ({ page }) => {
 });
 
 test('home search filters tools and recently used appears', async ({ page }) => {
-  await page.goto('/tools/heic-to-jpg');
+  await page.goto('/tools/webp-to-jpg');
   await page.goto('/');
   await expect(page.locator('#recent-section')).toBeVisible();
-  await expect(page.locator('#recent-list a')).toContainText(['HEIC to JPG']);
-  await page.fill('#tool-search', 'heic');
-  await expect(page.locator('[data-tool-grid] li:visible').first()).toContainText('HEIC');
+  await expect(page.locator('#recent-list a')).toContainText(['WebP to JPG']);
+  await page.fill('#tool-search', 'webp');
+  await expect(page.locator('[data-tool-grid] li:visible').first()).toContainText('WebP');
   await page.fill('#tool-search', 'zzzzqqq');
   await expect(page.locator('#search-empty')).toBeVisible();
 });

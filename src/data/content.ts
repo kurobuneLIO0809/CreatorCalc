@@ -2,7 +2,12 @@
  * Hand-written page content for each tool. Every statement here must match what the
  * code actually does — update this file whenever a tool's behaviour changes.
  */
+import { features } from '../config/site';
 import type { ToolSlug } from './tools';
+
+/** HEIC mentions are only published while the HEIC decoder is enabled. */
+const HEIC = features.heicDecoder;
+const RASTER_LIST = HEIC ? 'JPG, PNG, WebP, HEIC/HEIF, AVIF, GIF (first frame), BMP' : 'JPG, PNG, WebP, AVIF, GIF (first frame), BMP';
 
 export interface ToolContent {
   /** Short paragraphs explaining what the tool is for (shown below the tool). */
@@ -45,7 +50,7 @@ export const content: Record<ToolSlug, ToolContent> = {
     ],
     limits: [
       'Compression is lossy: at low quality settings, JPG and WebP show blocky or blurry areas. Use “Compare” before downloading.',
-      'Animated GIF and HEIC files are not accepted by this tool. HEIC photos are already highly compressed — use “HEIC to JPG” or “Compress to exact KB” instead.',
+      HEIC ? 'Animated GIF and HEIC files are not accepted by this tool. HEIC photos are already highly compressed — use “HEIC to JPG” or “Compress to exact KB” instead.' : 'Animated GIF and HEIC (iPhone) files are not accepted. On iPhone, export photos as JPG first.',
       'Colour profiles are converted to standard sRGB. Wide-gamut (Display P3) photos may look very slightly less saturated on wide-gamut screens.',
       'Very large images (above ~16 megapixels on iPhone/iPad) are automatically scaled down to fit the browser’s memory limit; a note is shown when this happens.',
     ],
@@ -65,7 +70,7 @@ export const content: Record<ToolSlug, ToolContent> = {
     ],
     steps: [
       'Pick a preset (20 KB, 50 KB, 100 KB, 200 KB, 500 KB, 1 MB) or type your own limit.',
-      'Choose or drop your photo — JPG, PNG, HEIC from iPhone, WebP and more are accepted.',
+      HEIC ? 'Choose or drop your photo — JPG, PNG, HEIC from iPhone, WebP and more are accepted.' : 'Choose or drop your photo — JPG, PNG, WebP, AVIF, GIF and BMP are accepted.',
       'Download the result. The row shows the exact byte count and whether it fits the limit.',
     ],
     useCases: [
@@ -74,7 +79,7 @@ export const content: Record<ToolSlug, ToolContent> = {
       { title: 'Messaging and forums', text: 'Some sites limit avatars or attachments to 500 KB or 1 MB. Set the limit once and drop several images.' },
     ],
     specs: [
-      ['Input formats', 'JPG, PNG, WebP, HEIC/HEIF, AVIF, GIF (first frame), BMP'],
+      ['Input formats', RASTER_LIST],
       ['Output formats', 'JPG (default) or WebP'],
       ['How the size is reached', 'Binary search over quality (40–92%), then proportional downscaling if needed'],
       ['KB definition', 'The limit is treated as 1 KB = 1,000 bytes, so a “100 KB” result is ≤ 100,000 bytes and passes forms that count 1 KB as 1,024 bytes as well'],
@@ -92,7 +97,9 @@ export const content: Record<ToolSlug, ToolContent> = {
       { q: 'How do I compress a photo to exactly 100 KB?', a: 'Select “100 KB”, then choose your photo. The tool returns the best-quality version that is at most 100,000 bytes. It is usually a little under the limit — an exact byte count is not needed, as forms check for “not larger than”.' },
       { q: 'The result says “Target not reached”. What can I do?', a: 'This happens with tiny limits and very detailed images. Crop the image to the important part, or choose a slightly larger limit if the form allows it.' },
       { q: 'Why is my 100 KB file shown as 97.6 KB on my computer?', a: 'Operating systems count 1 KB as either 1,000 or 1,024 bytes. We keep files at or below the limit in both systems, so a 100,000-byte file may be displayed as 97.6 KB by Windows.' },
-      { q: 'Can I use my iPhone HEIC photo?', a: 'Yes. HEIC photos are decoded in your browser (natively on Safari, with a bundled decoder elsewhere) and saved as JPG, which almost every form accepts.' },
+      HEIC
+        ? { q: 'Can I use my iPhone HEIC photo?', a: 'Yes. HEIC photos are decoded in your browser (natively on Safari, with a bundled decoder elsewhere) and saved as JPG, which almost every form accepts.' }
+        : { q: 'Can I use a photo straight from my iPhone?', a: 'When you pick a photo from the Photos library in Safari, iPhone usually hands the website a JPG, which works here. HEIC files copied to a computer are not supported yet — export them as JPG first, or set Settings → Camera → Formats → “Most Compatible”.' },
       { q: 'Is it safe to use for ID or passport photos?', a: 'The photo is processed entirely on your device and never uploaded to our servers. Nothing is stored after you close the tab.' },
     ],
   },
@@ -113,11 +120,11 @@ export const content: Record<ToolSlug, ToolContent> = {
       { title: 'Forms with pixel limits', text: 'Some applications require, for example, a maximum of 800 × 600 px. Enter both values with “keep aspect ratio” on and nothing will be cut off.' },
     ],
     specs: [
-      ['Input formats', 'JPG, PNG, WebP, HEIC/HEIF, AVIF, GIF (first frame), BMP'],
+      ['Input formats', RASTER_LIST],
       ['Resize modes', 'Width and/or height in pixels (fit inside or stretch), or percentage (1–400%)'],
       ['Maximum output size', '20,000 px per side (and the browser’s memory limit)'],
       ['Upscaling', 'Off by default (“Don’t enlarge images that are already smaller”)'],
-      ['Output formats', 'Same as original, JPG, PNG or WebP (HEIC/AVIF → JPG, GIF/BMP → PNG when “same”)'],
+      ['Output formats', `Same as original, JPG, PNG or WebP (${HEIC ? 'HEIC/AVIF' : 'AVIF'} → JPG, GIF/BMP → PNG when “same”)`],
       ['Resampling', 'Progressive halving + high-quality browser smoothing'],
       PRIVACY_SPEC,
       SIZE_SPEC,
@@ -137,8 +144,8 @@ export const content: Record<ToolSlug, ToolContent> = {
 
   'image-converter': {
     intro: [
-      'A single converter for everyday image formats: open HEIC photos from an iPhone, AVIF and WebP images from the web, GIF or BMP files, and save them as JPG, PNG or WebP. Drop several files of different formats at once — each is converted with the same output settings.',
-      'Looking for a specific conversion? The dedicated pages below explain the details for the most common ones: HEIC to JPG, WebP to JPG, PNG to JPG, JPG to PNG and JPG/PNG to WebP.',
+      (HEIC ? 'A single converter for everyday image formats: open HEIC photos from an iPhone, AVIF and WebP images from the web, GIF or BMP files, and save them as JPG, PNG or WebP.' : 'A single converter for everyday image formats: open AVIF and WebP images from the web, PNG, JPG, GIF or BMP files, and save them as JPG, PNG or WebP.') + ' Drop several files of different formats at once — each is converted with the same output settings.',
+      `Looking for a specific conversion? The dedicated pages below explain the details for the most common ones: ${HEIC ? 'HEIC to JPG, ' : ''}WebP to JPG, PNG to JPG, JPG to PNG and JPG/PNG to WebP.`,
     ],
     steps: [
       'Choose the output format: JPG, PNG or WebP.',
@@ -146,12 +153,12 @@ export const content: Record<ToolSlug, ToolContent> = {
       'Download the converted files individually or as a ZIP.',
     ],
     useCases: [
-      { title: 'Mixed folders', text: 'Convert a mixture of HEIC, WebP and PNG images to JPG for an app or printer that only accepts JPG.' },
+      { title: 'Mixed folders', text: `Convert a mixture of ${HEIC ? 'HEIC, ' : 'AVIF, '}WebP and PNG images to JPG for an app or printer that only accepts JPG.` },
       { title: 'Keeping transparency', text: 'Choose PNG or WebP output to keep transparent backgrounds from PNG, WebP, GIF or AVIF inputs.' },
       { title: 'Modern formats', text: 'Turn AVIF or WebP images from websites into formats older software can open.' },
     ],
     specs: [
-      ['Input formats', 'JPG, PNG, WebP, HEIC/HEIF, AVIF, GIF (first frame), BMP; TIFF only in browsers that can decode it (Safari)'],
+      ['Input formats', `${RASTER_LIST}; TIFF only in browsers that can decode it (Safari)`],
       ['Output formats', 'JPG, PNG, WebP (lossy or lossless)'],
       ['Transparency', 'Kept for PNG/WebP output; filled with a colour of your choice for JPG'],
       ['Detection', 'Formats are detected from the file’s content, not its extension'],
@@ -160,7 +167,7 @@ export const content: Record<ToolSlug, ToolContent> = {
     ],
     limits: [
       'Animated GIF/WebP/PNG files are converted as a single still image.',
-      'Output cannot be HEIC or AVIF (browsers cannot encode these formats yet).',
+      HEIC ? 'Output cannot be HEIC or AVIF (browsers cannot encode these formats yet).' : 'HEIC (iPhone) files are not supported yet, and output cannot be AVIF (browsers cannot encode it yet).',
       'SVG, PDF, RAW camera files and PSD are not supported.',
     ],
     faq: [
@@ -352,7 +359,7 @@ export const content: Record<ToolSlug, ToolContent> = {
   'image-to-pdf': {
     intro: [
       'Combine photos, scans and screenshots into one PDF — for example to submit documents, send receipts or archive notes. Put the pages in the order you want, then choose the page size and margins.',
-      'JPG photos are embedded in the PDF exactly as they are, without being re-compressed, so there is no quality loss. PNG images are embedded losslessly. Other formats (HEIC, WebP, AVIF) are converted to high-quality JPG first.',
+      `JPG photos are embedded in the PDF exactly as they are, without being re-compressed, so there is no quality loss. PNG images are embedded losslessly. Other formats (${HEIC ? 'HEIC, ' : ''}WebP, AVIF) are converted to high-quality JPG first.`,
     ],
     steps: [
       'Choose or drop your images. Add more at any time.',
@@ -365,7 +372,7 @@ export const content: Record<ToolSlug, ToolContent> = {
       { title: 'Notes and whiteboards', text: 'Combine photos of handwritten notes or a whiteboard into a document you can share.' },
     ],
     specs: [
-      ['Input formats', 'JPG, PNG, WebP, HEIC/HEIF, AVIF, GIF (first frame), BMP'],
+      ['Input formats', RASTER_LIST],
       ['Page size', 'A4, US Letter, or matching each image (96 px per inch)'],
       ['Orientation', 'Automatic per image, or fixed portrait/landscape'],
       ['Margins', 'None, small (0.25 in) or large (0.5 in)'],
@@ -402,10 +409,10 @@ export const content: Record<ToolSlug, ToolContent> = {
       { title: 'Removing distractions', text: 'Cut away edges, people in the background or parts of a screenshot you do not want to share.' },
     ],
     specs: [
-      ['Input formats', 'JPG, PNG, WebP, HEIC/HEIF, AVIF, GIF (first frame), BMP'],
+      ['Input formats', RASTER_LIST],
       ['Aspect presets', 'Free, original, 1:1, 4:3, 3:2, 16:9, 9:16, 4:5'],
       ['Precision', 'Whole pixels in the original image'],
-      ['Output', 'Same format as the original (HEIC/AVIF → JPG), or JPG/PNG/WebP'],
+      ['Output', `Same format as the original (${HEIC ? 'HEIC/AVIF' : 'AVIF'} → JPG), or JPG/PNG/WebP`],
       ['Keyboard', 'Arrow keys move the frame; Shift + arrow keys resize it'],
       PRIVACY_SPEC,
     ],
@@ -436,9 +443,9 @@ export const content: Record<ToolSlug, ToolContent> = {
       { title: 'Mirrored selfies', text: 'Flip front-camera photos horizontally so text reads correctly.' },
     ],
     specs: [
-      ['Input formats', 'JPG, PNG, WebP, HEIC/HEIF, AVIF, GIF (first frame), BMP'],
+      ['Input formats', RASTER_LIST],
       ['Operations', 'Rotate 90° left/right, 180°, flip horizontal, flip vertical (combinable)'],
-      ['Output', 'Same format (HEIC/AVIF → JPG, GIF/BMP → PNG); JPG/WebP saved at 92% quality'],
+      ['Output', `Same format (${HEIC ? 'HEIC/AVIF' : 'AVIF'} → JPG, GIF/BMP → PNG); JPG/WebP saved at 92% quality`],
       ['EXIF orientation', 'Applied first, so the rotation is relative to how the photo normally appears'],
       PRIVACY_SPEC,
       SIZE_SPEC,
@@ -513,7 +520,7 @@ export const content: Record<ToolSlug, ToolContent> = {
       SIZE_SPEC,
     ],
     limits: [
-      'HEIC files cannot be cleaned losslessly here. Convert them with HEIC to JPG — the converted JPG has no metadata at all.',
+      HEIC ? 'HEIC files cannot be cleaned losslessly here. Convert them with HEIC to JPG — the converted JPG has no metadata at all.' : 'HEIC files are not supported. Export them as JPG first (the EXIF Viewer can still show what a HEIC file contains).',
       'Metadata is not the only way to identify a photo’s location: landmarks, street signs and reflections in the picture itself are not removed.',
       'Embedded preview images, depth maps and HDR gain maps stored after the main JPG image are removed, so some phone-specific effects (e.g. HDR display boost) may not appear.',
     ],

@@ -1,5 +1,5 @@
 {
-  "name": "quickconvert",
+  "name": "wrenfile",
   "version": "0.1.0",
   "private": true,
   "description": "Free, account-free image tools that run in the browser. Static site for Cloudflare Pages.",
@@ -16,7 +16,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "og": "node scripts/generate-og.mjs",
-    "verify": "npm run check && npm test && npm run build && npm run test:e2e"
+    "verify": "npm run check && npm test && npm run build && npm run test:e2e",
+    "gsc": "node scripts/gsc/analyze.mjs"
   },
   "repository": {
     "type": "git",

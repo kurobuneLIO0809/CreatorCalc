@@ -65,12 +65,12 @@ has more than one `<h1>`, duplicates another page's title or description, or ref
 | image-compressor | Compress Images Online – JPG, PNG & WebP, No Upload | compress image, reduce image size |
 | compress-image-to-kb | Compress Image to 20KB, 50KB, 100KB or Any Size – Free | compress image to 100kb / 50kb / 20kb |
 | image-resizer | Resize Image Online – Change Pixels or Percentage, Free | resize image, change image size in pixels |
-| image-converter | Image Converter – HEIC, WebP, PNG, JPG, AVIF Online | image converter, convert image format |
-| heic-to-jpg | HEIC to JPG Converter – Free, Batch, No Upload | heic to jpg |
+| image-converter | Image Converter – WebP, PNG, JPG, AVIF, GIF, BMP Online | image converter, convert image format |
+| heic-to-jpg | *(disabled for launch — no page, not in sitemap)* | heic to jpg |
 | webp-to-jpg | WebP to JPG Converter – Free Online, Batch, No Upload | webp to jpg (+ webp to png) |
 | png-to-jpg | PNG to JPG Converter – Choose Background, Free & Private | png to jpg |
 | jpg-to-png | JPG to PNG Converter – Free, Lossless Output, No Upload | jpg to png |
-| image-to-webp | JPG & PNG to WebP Converter – Works on iPhone Too | jpg to webp, png to webp |
+| image-to-webp | JPG & PNG to WebP Converter – Lossy or Lossless, Free | jpg to webp, png to webp |
 | image-to-pdf | JPG to PDF – Combine Images into One PDF, Free & Private | jpg to pdf, image to pdf |
 | image-cropper | Crop Image Online – Square, 16:9, 4:5 or Custom, Free | crop image |
 | rotate-image | Rotate Image Online – Rotate 90°/180° or Flip, Free | rotate image, flip image |
@@ -130,7 +130,7 @@ escaped to prevent script-breaking injection.
 - New domain on a shared `pages.dev` subdomain: slow initial trust; moving to a custom domain later needs
   301s — do it early.
 - Head terms are dominated by very strong domains; growth depends on long-tail intents and links.
-- Brand name collision ("QuickConvert") weakens branded search.
+- Brand renamed to Wrenfile (the working title collided with ≥ 7 products); do a trademark search before investing in the brand.
 - English only for now; localization must be real translation with local examples, not machine-duplicated
   pages.
 

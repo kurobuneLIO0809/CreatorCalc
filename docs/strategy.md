@@ -1,4 +1,4 @@
-# QuickConvert — Strategy
+# Wrenfile — Strategy (working title: QuickConvert)
 
 _Last updated: 2026-09-29. Research was done with web search on that date. Search-volume figures below are
 directional (third-party estimates quoted in public articles), not measured data. Replace them with Google
@@ -241,8 +241,9 @@ Criteria: easy to say and spell after hearing it once, 2 syllables, not descript
 4. **Pixlark** — easy, but a developer handle with the same name exists.
 5. **Wrenfile** — best if the site will soon be more about PDFs/video than images.
 
-Recommendation: **Pixwren** (or Wrenfile if you want to be category-neutral), after a registrar check and a
-trademark search. **No domain has been purchased.** Renaming = change `site.name` in
+**Decision (2026-09-30, owner): Wrenfile** — category-neutral, so it still fits when PDF/GIF/video tools are
+added. Applied in code (`site.name`, OG images, manifest, `wrangler.toml`). Registrar check and trademark
+search are still open (launch-checklist.md). **No domain has been purchased.** Renaming = change `site.name` in
 `src/config/site.ts`, run `npm run og`, rebuild.
 
 ## 10. Tool audit (2026-09-30)
@@ -288,8 +289,15 @@ not something we can resolve technically**. Safari users are unaffected (Apple's
 the HEIC page would only work in Safari. Tested: real HEIC → JPG in Chromium, damaged HEIC fails cleanly,
 HEIC inside Image to PDF. Not testable here: Safari's native path.
 
-**Decision:** keep HEIC enabled for launch (it serves one of the largest search intents), with licence
+**Initial recommendation:** keep HEIC enabled for launch (it serves one of the largest search intents), with licence
 compliance in place, and make it switchable: `features.heicDecoder = false` in `src/config/site.ts` removes the
 HEIC to JPG page, its sitemap entry and all links to it, and makes other tools show a clear
 "open it in Safari" message instead of loading the decoder. **You should decide** whether you accept the patent
 grey area; if unsure, set the flag to `false` before launch (the rest of the site is unaffected).
+
+**Final decision (2026-09-30, owner): HEIC disabled for launch.** `features.heicDecoder = false`: HEIC is
+not supported anywhere (not even via Safari's native decoder, to keep behaviour and copy consistent across
+browsers); the decoder is excluded from the bundle at compile time (post-build check fails if it leaks); the
+HEIC to JPG page, sitemap entry, links and all HEIC claims are removed; HEIC files get a clear message with
+the iPhone "Most Compatible" workaround. The EXIF Viewer still reads HEIC metadata (container parsing only, no
+HEVC decoding). Re-evaluate with roadmap rule R8.

@@ -11,3 +11,6 @@ coverage/
 .DS_Store
 *.log
 tests/e2e/.cache/
+# Search Console exports contain your site's search data — keep them local
+gsc-export/
+gsc-report.md

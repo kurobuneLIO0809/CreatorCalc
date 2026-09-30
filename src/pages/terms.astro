@@ -1,6 +1,6 @@
 ---
 import PageLayout from '../layouts/PageLayout.astro';
-import { site } from '../config/site';
+import { features, site } from '../config/site';
 const updated = new Date(site.legalUpdated).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
 ---
 
@@ -36,7 +36,7 @@ const updated = new Date(site.legalUpdated).toLocaleDateString('en-US', { year: 
 
   <h2>6. Third-party software</h2>
   <p>
-    The tools include open-source components under their own licences (listed on the <a href="/methodology#open-source">methodology page</a>). The HEIC decoder is licensed under the LGPL-3.0 and is served as a separate file built from the unmodified library; its source code is available from the linked project.
+    The tools include open-source components under their own licences (listed on the <a href="/methodology#open-source">methodology page</a>).{features.heicDecoder && ' The HEIC decoder is licensed under the LGPL-3.0 and is served as a separate file built from the unmodified library; its source code is available from the linked project.'}
   </p>
 
   <h2>7. Changes</h2>

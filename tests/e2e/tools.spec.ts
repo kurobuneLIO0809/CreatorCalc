@@ -3,9 +3,12 @@ import { existsSync } from 'node:fs';
 import { PDFDocument } from 'pdf-lib';
 import sharp from 'sharp';
 import { unzipSync } from 'fflate';
+import { features } from '../../src/config/site';
 import { addFiles, download, expect, fx, gotoTool, resultRows, test, waitForAllDone } from './helpers';
 
 const meta = (b: Buffer) => sharp(b).metadata();
+const HEIC = features.heicDecoder;
+const hasHeicSample = () => existsSync(fx('example.heic'));
 
 test.describe('Image Compressor', () => {
   test('compresses a JPG, strips EXIF/GPS and the output opens', async ({ page }) => {
@@ -257,7 +260,7 @@ test.describe('Converters', () => {
   });
 
   test('HEIC → JPG with the bundled decoder', async ({ page }) => {
-    test.skip(!existsSync(fx('example.heic')), 'sample HEIC not available');
+    test.skip(!HEIC || !hasHeicSample(), 'HEIC disabled or sample not available');
     test.setTimeout(120_000);
     await gotoTool(page, '/tools/heic-to-jpg');
     await addFiles(page, 'example.heic');
@@ -270,7 +273,7 @@ test.describe('Converters', () => {
   });
 
   test('damaged HEIC fails with a message instead of hanging', async ({ page }) => {
-    test.skip(!existsSync(fx('example.heic')), 'sample HEIC not available');
+    test.skip(!HEIC || !hasHeicSample(), 'HEIC disabled or sample not available');
     const { readFileSync, writeFileSync } = await import('node:fs');
     writeFileSync(fx('broken.heic'), readFileSync(fx('example.heic')).subarray(0, 60_000));
     await gotoTool(page, '/tools/heic-to-jpg');
@@ -282,10 +285,42 @@ test.describe('Converters', () => {
   });
 
   test('HEIC tool rejects non-HEIC files helpfully', async ({ page }) => {
+    test.skip(!HEIC, 'HEIC disabled');
     await gotoTool(page, '/tools/heic-to-jpg');
     await addFiles(page, 'photo.jpg', 'small.png');
     await expect(resultRows(page).nth(0)).toContainText('already a JPG');
     await expect(resultRows(page).nth(1)).toContainText('not HEIC');
+  });
+});
+
+test.describe('HEIC disabled (launch configuration)', () => {
+  test.skip(HEIC, 'HEIC decoder enabled');
+
+  test('HEIC page does not exist', async ({ page }) => {
+    const res = await page.goto('/tools/heic-to-jpg');
+    expect(res?.status()).toBe(404);
+  });
+
+  test('HEIC files get a clear "not supported" message and no decoder is downloaded', async ({ page }) => {
+    test.skip(!hasHeicSample(), 'sample HEIC not available');
+    const scripts: string[] = [];
+    page.on('request', (r) => scripts.push(r.url()));
+    for (const path of ['/tools/image-converter', '/tools/compress-image-to-kb', '/tools/remove-exif']) {
+      await gotoTool(page, path);
+      await addFiles(page, 'example.heic');
+      await expect(resultRows(page).first()).toContainText('HEIC (iPhone) photos are not supported yet');
+    }
+    await gotoTool(page, '/tools/image-to-pdf');
+    await addFiles(page, 'example.heic');
+    await expect(page.locator('.page-item--error')).toContainText('not supported yet');
+    expect(scripts.some((u) => /heic-to/.test(u))).toBe(false);
+  });
+
+  test('EXIF viewer still reads HEIC metadata (no decoding needed)', async ({ page }) => {
+    test.skip(!hasHeicSample(), 'sample HEIC not available');
+    await gotoTool(page, '/tools/exif-viewer');
+    await addFiles(page, 'example.heic');
+    await expect(page.locator('.exif__head')).toContainText('HEIC');
   });
 });
 
@@ -310,11 +345,11 @@ test.describe('Image to PDF', () => {
     expect(bytes.includes(original.subarray(original.length - 4096))).toBe(true);
   });
 
-  test('page size matching the image, HEIC included', async ({ page }) => {
+  test('page size matching the image (plus HEIC when enabled)', async ({ page }) => {
     test.setTimeout(120_000);
     await gotoTool(page, '/tools/image-to-pdf');
     const files = ['small.png'];
-    if (existsSync(fx('example.heic'))) files.push('example.heic');
+    if (HEIC && hasHeicSample()) files.push('example.heic');
     await addFiles(page, ...files);
     await page.getByLabel('Page size').selectOption('image');
     await page.getByRole('radio', { name: 'None', exact: true }).check();

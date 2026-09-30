@@ -24,18 +24,24 @@ const PACKAGES = [
 ];
 
 const root = new URL('../node_modules/', import.meta.url);
+// The HEIC decoder is only shipped (and listed) when enabled in src/config/site.ts.
+const siteSrc = await readFile(new URL('../src/config/site.ts', import.meta.url), 'utf8');
+const heicEnabled = /heicDecoder:\s*true/.test(siteSrc);
+const shipped = PACKAGES.filter(([name]) => name !== 'heic-to' || heicEnabled);
 const parts = [
   'Third-party software used in the browser by this website',
   '==========================================================',
   '',
+];
+if (heicEnabled) parts.push(
   'The HEIC decoder (heic-to / libheif / libde265) is licensed under the GNU LGPL v3.0. It is loaded as a',
   'separate JavaScript file only when a HEIC image is opened in a browser without native HEIC support.',
   'Its complete corresponding source code is available at the project URLs below, for the exact version',
   'listed. You may replace that file with a modified build of the library.',
   '',
-];
+);
 
-for (const [name, url] of PACKAGES) {
+for (const [name, url] of shipped) {
   const dir = new URL(`${name}/`, root);
   const pkg = JSON.parse(await readFile(new URL('package.json', dir), 'utf8'));
   const files = await readdir(dir);
@@ -45,4 +51,4 @@ for (const [name, url] of PACKAGES) {
 }
 
 await writeFile(new URL('../dist/third-party-licenses.txt', import.meta.url), parts.join('\n'));
-console.log(`licenses: wrote notices for ${PACKAGES.length} packages`);
+console.log(`licenses: wrote notices for ${shipped.length} packages`);

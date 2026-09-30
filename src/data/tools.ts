@@ -1,4 +1,6 @@
 import { features } from '../config/site';
+
+const HEIC = features.heicDecoder;
 import type { CategoryId } from './categories';
 
 export type ToolSlug =
@@ -76,7 +78,7 @@ const allTools: ToolMeta[] = [
     name: 'Image Resizer',
     h1: 'Image Resizer',
     title: 'Resize Image Online – Change Pixels or Percentage, Free',
-    description: 'Resize JPG, PNG, WebP and HEIC images by pixels or percentage. Keep the aspect ratio, batch resize many photos and download instantly. No upload.',
+    description: `Resize JPG, PNG, WebP${HEIC ? ' and HEIC' : ' and AVIF'} images by pixels or percentage. Keep the aspect ratio, batch resize many photos and download instantly. No upload.`,
     tagline: 'Change image dimensions by pixels or percentage, one photo or a whole batch.',
     icon: 'resize',
     popular: true,
@@ -89,8 +91,8 @@ const allTools: ToolMeta[] = [
     category: 'image',
     name: 'Image Converter',
     h1: 'Image Converter',
-    title: 'Image Converter – HEIC, WebP, PNG, JPG, AVIF Online',
-    description: 'Convert images between JPG, PNG and WebP. Opens HEIC, AVIF, GIF and BMP too. Batch conversion in your browser — free, private, no account.',
+    title: HEIC ? 'Image Converter – HEIC, WebP, PNG, JPG, AVIF Online' : 'Image Converter – WebP, PNG, JPG, AVIF, GIF, BMP Online',
+    description: `Convert images between JPG, PNG and WebP. Opens ${HEIC ? 'HEIC, ' : ''}AVIF, GIF and BMP too. Batch conversion in your browser — free, private, no account.`,
     tagline: 'Convert almost any image to JPG, PNG or WebP in one step.',
     icon: 'convert',
     popular: true,
@@ -171,7 +173,7 @@ const allTools: ToolMeta[] = [
     name: 'Image to PDF',
     h1: 'Image to PDF (JPG to PDF)',
     title: 'JPG to PDF – Combine Images into One PDF, Free & Private',
-    description: 'Combine JPG, PNG, WebP and HEIC images into a single PDF. Reorder pages, pick A4 or Letter and margins. Original JPG quality kept. No upload.',
+    description: `Combine JPG, PNG, WebP${HEIC ? ' and HEIC' : ' and AVIF'} images into a single PDF. Reorder pages, pick A4 or Letter and margins. Original JPG quality kept. No upload.`,
     tagline: 'Combine photos and scans into a single PDF document.',
     icon: 'pdf',
     popular: true,

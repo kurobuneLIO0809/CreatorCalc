@@ -2,10 +2,10 @@
  * Site-wide configuration. The brand name is provisional — change it here only.
  */
 export const site = {
-  name: 'QuickConvert',
+  name: 'Wrenfile',
   tagline: 'Free image tools. No account. Files stay on your device.',
   description:
-    'Free online image tools that run in your browser: compress, resize, convert HEIC, WebP, PNG and JPG, make PDFs and remove photo metadata. No sign-up, no upload.',
+    'Free online image tools that run in your browser: compress, resize, convert WebP, PNG and JPG, make PDFs and remove photo metadata. No sign-up, no upload.',
   locale: 'en_US',
   lang: 'en',
   /** Public issue tracker used as the contact channel until a support email exists. */
@@ -21,11 +21,11 @@ export const site = {
 export const features = {
   /**
    * Bundled HEIC decoder (libheif via heic-to, LGPL-3.0) for browsers without native HEIC support
-   * (Chrome, Edge, Firefox). Safari always uses the OS decoder. Set to false to ship without it:
-   * HEIC files then only work in Safari and the HEIC to JPG page is removed from the site.
-   * See docs/strategy.md "HEIC decision".
+   * (Chrome, Edge, Firefox). When false (current setting), HEIC is not supported at all: the decoder
+   * is not bundled, HEIC files get a clear message, the HEIC to JPG page and all HEIC claims are
+   * removed. See docs/strategy.md §11 "HEIC decision".
    */
-  heicDecoder: true,
+  heicDecoder: false,
 } as const;
 
 /** Resource limits shared by all image tools. */

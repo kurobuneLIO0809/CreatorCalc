@@ -1,17 +1,17 @@
 # Testing
 
-_Last run: 2026-09-30 (Node 22.22, Chromium 140 headless, Playwright 1.55, Vitest 5). Pre-launch audit rerun._
+_Last run: 2026-09-30 (Node 22.22, Chromium 140 headless, Playwright 1.55, Vitest 5). **Launch configuration: name Wrenfile, HEIC disabled.**_
 
 ## Summary
 
 | Suite | Command | Result |
 |---|---|---|
 | Type check (Astro + TS) | `npm run check` | **0 errors, 0 warnings** (66 files) |
-| Unit tests | `npm test` | **48 / 48 passed** |
-| Build + post-build checks | `npm run build` | **OK** — 22 HTML pages validated (title, description, canonical, OG, single H1, CSP meta, no inline styles, no duplicate titles/descriptions, **no broken internal links**, licence notice present) |
-| E2E — local Cloudflare-like server | `npm run test:e2e` | **104 passed**, 2 skipped (mobile-only tests on the desktop project) |
-| E2E — `wrangler pages dev` (Cloudflare's own asset server & `_headers`) | `BASE_URL=http://127.0.0.1:8788 npx playwright test` | **104 passed**, 2 skipped |
-| Lighthouse 12 (mobile emulation) | /, compress-image-to-kb, image-to-pdf, methodology | **99–100 / 100 / 100 / 100** (Perf / A11y / Best practices / SEO); LCP 1.2–1.7 s, CLS 0, TBT 0–70 ms |
+| Unit tests | `npm test` | **52 / 52 passed** (incl. Search Console analyzer) |
+| Build + post-build checks | `npm run build` | **OK** — 21 HTML pages validated (title, description, canonical, OG, single H1, CSP meta, no inline styles, no duplicate titles/descriptions, **no broken internal links**, licence notice present, **HEIC decoder not shipped**) |
+| E2E — local Cloudflare-like server | `npm run test:e2e` | **102 passed**, 5 skipped (2 mobile-only tests on the desktop project, 3 tests that only apply when HEIC is enabled) |
+| E2E — `wrangler pages dev` (Cloudflare's own asset server & `_headers`) | `BASE_URL=http://127.0.0.1:8788 npx playwright test` | **102 passed**, 5 skipped |
+| Lighthouse 12 (mobile emulation) | /, compress-image-to-kb, image-converter (+ image-to-pdf, methodology in the previous run) | **99–100 / 100 / 100 / 100** (Perf / A11y / Best practices / SEO); LCP 1.2–1.7 s, CLS 0, TBT 0–70 ms |
 | axe-core (WCAG 2.1 A/AA) | in E2E | **0 serious/critical violations** on 8 pages + a tool with results in dark mode, desktop and mobile |
 
 ## A global "no upload" guard
@@ -53,7 +53,8 @@ production Content-Security-Policy.
 | Compressor | JPG compressed, output decodes, dimensions kept, **EXIF/GPS absent**; auto re-run on setting change → WebP output; PNG quantized keeps alpha; batch ZIP with 3 files; 1×1 JPG → original kept (never bigger); rejects **empty, HTML renamed .jpg, SVG with script, 3.6-gigapixel PNG bomb, .txt, corrupt JPEG, GIF** with specific messages; Japanese + `<x>&"` file name shown as text and sanitised on download; **cancel** mid-batch, **reset**, tool usable again after cancel; before/after compare |
 | Compress to KB | 100 KB target → ≤ 100,000 bytes and > 50 KB (quality not wasted); 20 KB on a 20 MP image → fits via downscaling; custom 300 KB; invalid 2 KB → clear error, fixed by editing the value |
 | Resizer | 800 px width → 800×600, name `photo-800x600.jpg`, PNG stays PNG; 200% with no-upscale keeps 64×48; missing dimensions → error |
-| Converters | WebP→JPG fills transparency white; JPG in WebP tool → "already a JPG"; PNG→JPG with black background; JPG→PNG applies EXIF orientation (300×200 + orientation 6 → 200×300); JPG→WebP lossy and lossless both produce real WebP; converter hub GIF/WebP/JPG → PNG; **HEIC→JPG with the bundled libheif decoder** (real HEIC sample); HEIC tool rejects JPG/PNG helpfully |
+| Converters | WebP→JPG fills transparency white; JPG in WebP tool → "already a JPG"; PNG→JPG with black background; JPG→PNG applies EXIF orientation (300×200 + orientation 6 → 200×300); JPG→WebP lossy and lossless both produce real WebP; converter hub GIF/WebP/JPG → PNG; HEIC→JPG with the bundled libheif decoder and HEIC-tool messages (run only when HEIC is enabled; all passed in the enabled configuration) |
+| HEIC disabled | `/tools/heic-to-jpg` is 404; HEIC files dropped into the converter, compress-to-KB, remove-EXIF and image-to-PDF show "HEIC (iPhone) photos are not supported yet"; **no request for the decoder** is made; the EXIF viewer still reads HEIC metadata |
 | Robustness | truncated HEIC → clear error (no hang) and the next HEIC still converts; **main-thread fallback with `OffscreenCanvas` removed** (simulates Safari < 16.4) produces real WebP files |
 | Image to PDF | 3 images reordered → 3-page PDF, landscape A4 page, **original JPG bytes embedded unchanged**; image-sized pages incl. HEIC; bad files listed but excluded |
 | Crop / rotate / EXIF | 1:1 crop with numeric width → 500×500; keyboard moves crop frame; rotate right on an orientation-6 photo; EXIF viewer shows camera + GPS warning, "No GPS" for clean PNG; Remove EXIF → GPS gone and **pixels bit-identical** |

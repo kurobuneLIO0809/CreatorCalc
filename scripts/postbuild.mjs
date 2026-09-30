@@ -23,7 +23,7 @@ const isProduction = !!branch && branch === (process.env.PRODUCTION_BRANCH || 'm
 if (isProduction && !process.env.SITE_URL) {
   errors.push('SITE_URL is not set. Add it in Cloudflare Pages → Settings → Environment variables (e.g. https://<project>.pages.dev).');
 }
-if (!process.env.SITE_URL) warnings.push('SITE_URL not set — canonical URLs use the default https://quickconvert.pages.dev');
+if (!process.env.SITE_URL) warnings.push('SITE_URL not set — canonical URLs use the default https://wrenfile.pages.dev');
 
 const files = await walk(DIST);
 const html = files.filter((f) => f.endsWith('.html'));
@@ -81,6 +81,14 @@ for (const [d, pages] of descriptions) if (pages.length > 1) errors.push(`duplic
 
 for (const required of ['robots.txt', 'sitemap-index.xml', '_headers', '404.html', 'favicon.svg', 'site.webmanifest', 'third-party-licenses.txt']) {
   if (!files.some((f) => relative(DIST, f) === required)) errors.push(`missing ${required}`);
+}
+
+// With the HEIC decoder disabled, the LGPL decoder must not be shipped at all.
+const siteSrc = await readFile(new URL('../src/config/site.ts', import.meta.url), 'utf8');
+if (/heicDecoder:\s*false/.test(siteSrc)) {
+  const leaked = files.filter((f) => /heic-to/i.test(f));
+  if (leaked.length) errors.push(`HEIC decoder disabled but shipped: ${leaked.map((f) => relative(DIST, f)).join(', ')}`);
+  for (const f of html) if (/heic-to-jpg/.test(await readFile(f, 'utf8'))) errors.push(`${relative(DIST, f)}: links to disabled HEIC page`);
 }
 
 const sizes = files.filter((f) => /\.(js|wasm|css)$/.test(f));

@@ -1,3 +1,4 @@
+import { features } from '../config/site';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { BatchTool } from '../components/tool-ui/BatchTool';
 import { Checkbox, NumberField, Segmented, Select, Slider } from '../components/tool-ui/fields';
@@ -101,7 +102,7 @@ export default function ResizerTool() {
             { value: 'png', label: 'PNG' },
             { value: 'webp', label: 'WebP' },
           ]}
-          hint="HEIC and AVIF are saved as JPG; GIF and BMP as PNG when “same” is selected."
+          hint={`${features.heicDecoder ? 'HEIC and AVIF are' : 'AVIF is'} saved as JPG; GIF and BMP as PNG when “same” is selected.`}
         />
         {format !== 'png' && <Slider label="Quality (JPG / WebP)" value={quality} min={40} max={100} suffix="%" onChange={setQuality} />}
         {preview && first && (
