@@ -1,3 +1,4 @@
+import { t } from '../../i18n/runtime';
 import { useEffect, useRef, useState } from 'preact/hooks';
 
 interface CompareSliderProps {
@@ -27,7 +28,7 @@ export function CompareSlider({ beforeUrl, afterUrl, beforeLabel, afterLabel }: 
     setPos(Math.round(Math.min(100, Math.max(0, ((clientX - rect.left) / rect.width) * 100))));
   };
 
-  if (failed) return <p class="muted">A preview of the original is not available in this browser (the format cannot be displayed), but the converted file is fine.</p>;
+  if (failed) return <p class="muted">{t('cmp.unavailable')}</p>;
 
   return (
     <div class="compare">
@@ -49,7 +50,7 @@ export function CompareSlider({ beforeUrl, afterUrl, beforeLabel, afterLabel }: 
         <span class="compare__tag compare__tag--right">{afterLabel}</span>
       </div>
       <label class="visually-hidden" for="compare-range">
-        Comparison position
+        {t('cmp.position')}
       </label>
       <input id="compare-range" class="slider" type="range" min={0} max={100} value={pos} onInput={(e) => setPos(Number((e.target as HTMLInputElement).value))} />
     </div>

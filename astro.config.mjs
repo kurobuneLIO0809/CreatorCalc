@@ -35,9 +35,14 @@ export default defineConfig({
     preact(),
     sitemap({
       filter: (page) => !/\/404(\.html)?$/.test(page),
+      // Adds xhtml:link alternates between translations (same path after the language prefix).
+      i18n: {
+        defaultLocale: 'en',
+        locales: { en: 'en', ja: 'ja', zh: 'zh-Hans', ko: 'ko', fr: 'fr', it: 'it' },
+      },
       // lastmod only where we track real content changes (tool registry), never the build date.
       serialize(item) {
-        const slug = new URL(item.url).pathname.match(/^\/tools\/([a-z0-9-]+)$/)?.[1];
+        const slug = new URL(item.url).pathname.match(/^(?:\/(?:ja|zh|ko|fr|it))?\/tools\/([a-z0-9-]+)$/)?.[1];
         const tool = tools.find((t) => t.slug === slug);
         if (tool) item.lastmod = tool.updated;
         return item;

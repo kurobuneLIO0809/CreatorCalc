@@ -26,6 +26,9 @@
   --radius-sm: 9px;
   --maxw: 1080px;
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  --font-ja: system-ui, -apple-system, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Yu Gothic', Meiryo, 'Noto Sans JP', sans-serif;
+  --font-zh: system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', 'Source Han Sans SC', sans-serif;
+  --font-ko: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
@@ -102,6 +105,21 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   overflow-wrap: anywhere;
+}
+/* CJK text: prefer the platform's native CJK fonts; `anywhere` breaking is too aggressive for Korean words. */
+:lang(ja) body {
+  font-family: var(--font-ja);
+}
+:lang(ja) :is(h1, h2, h3, .hero__lead, .page-head__lead) {
+  /* Breaks Japanese at phrase boundaries where supported (Chromium); ignored elsewhere. */
+  word-break: auto-phrase;
+}
+:lang(zh) body {
+  font-family: var(--font-zh);
+}
+:lang(ko) body {
+  font-family: var(--font-ko);
+  word-break: keep-all;
 }
 
 img {
@@ -205,6 +223,8 @@ p {
   align-items: center;
   gap: 12px;
   min-height: 60px;
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 .brand {
   display: inline-flex;
@@ -261,6 +281,73 @@ p {
 .theme-toggle svg {
   width: 20px;
   height: 20px;
+}
+
+@media (max-width: 400px) {
+  .site-header__inner {
+    gap: 6px;
+  }
+  .site-nav a {
+    padding: 8px 6px;
+  }
+  .lang-menu summary svg {
+    display: none;
+  }
+}
+
+/* Language menu: a native <details> so it works without JavaScript. */
+.lang-menu {
+  position: relative;
+}
+.lang-menu summary {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.lang-menu summary::-webkit-details-marker {
+  display: none;
+}
+.lang-menu summary svg {
+  width: 18px;
+  height: 18px;
+}
+.lang-menu ul {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  min-width: 160px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+}
+.lang-menu a {
+  display: block;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  text-decoration: none;
+}
+.lang-menu a:hover {
+  background: var(--surface-2);
+}
+.lang-menu a[aria-current='true'] {
+  font-weight: 700;
+  background: var(--surface-2);
 }
 
 .site-footer {

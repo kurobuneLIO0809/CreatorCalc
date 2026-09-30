@@ -1,19 +1,21 @@
 ---
 import ToolIcon from './ToolIcon.astro';
 import { toolPath, type ToolMeta } from '../data/tools';
+import { localePath, type Locale } from '../i18n';
 interface Props {
+  /** Tools already localized for `locale` (see localizedTools). */
   tools: ToolMeta[];
+  locale: Locale;
   searchable?: boolean;
-  headingLevel?: 'h2' | 'h3';
 }
-const { tools, searchable = false } = Astro.props;
+const { tools, locale, searchable = false } = Astro.props;
 ---
 
 <ul class="tool-grid" data-tool-grid={searchable ? '' : undefined}>
   {
     tools.map((t) => (
       <li data-search={searchable ? `${t.name} ${t.tagline} ${t.searchTerms.join(' ')}`.toLowerCase() : undefined}>
-        <a class="tool-link" href={toolPath(t.slug)}>
+        <a class="tool-link" href={localePath(locale, toolPath(t.slug))}>
           <span class="tool-link__icon">
             <ToolIcon name={t.icon} />
           </span>

@@ -1,16 +1,18 @@
 ---
+import { siteT, type Locale } from '../i18n';
+
 interface Props {
-  placeholder?: string;
+  locale: Locale;
 }
-const { placeholder = 'Search tools, e.g. “webp”, “100kb”, “pdf”' } = Astro.props;
+const tr = siteT(Astro.props.locale);
 ---
 
 <div class="search" role="search">
   <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"></circle><path d="m20 20-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
-  <label for="tool-search" class="visually-hidden">Search tools</label>
-  <input id="tool-search" type="search" autocomplete="off" spellcheck="false" placeholder={placeholder} data-tool-search />
+  <label for="tool-search" class="visually-hidden">{tr('search.label')}</label>
+  <input id="tool-search" type="search" autocomplete="off" spellcheck="false" placeholder={tr('search.placeholder')} data-tool-search />
 </div>
-<p class="empty-state" id="search-empty" hidden>No tool matches your search yet. Try “convert”, “resize” or “compress”.</p>
+<p class="empty-state" id="search-empty" hidden>{tr('search.empty')}</p>
 
 <script>
   const input = document.querySelector<HTMLInputElement>('[data-tool-search]');

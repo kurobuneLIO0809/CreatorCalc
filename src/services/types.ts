@@ -28,6 +28,12 @@ export interface PipelineOptions {
   maxCanvasSide: number;
 }
 
+/** A translatable message produced in the worker (translated on the main thread). */
+export interface Note {
+  key: string;
+  params?: Record<string, string | number>;
+}
+
 export interface PipelineResult {
   blob: Blob;
   width: number;
@@ -36,7 +42,7 @@ export interface PipelineResult {
   quality?: number;
   /** Only for target-size jobs. */
   fitsTarget?: boolean;
-  notes: string[];
+  notes: Note[];
 }
 
 export type WorkerRequest = {

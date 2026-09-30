@@ -42,7 +42,7 @@ test('mobile: crop with touch drag on a handle', async ({ page, isMobile }) => {
   expect((await sharp(bytes).metadata()).width).toBe(w);
 });
 
-for (const path of ['/', '/tools', '/tools/image-compressor', '/tools/image-to-pdf', '/tools/image-cropper', '/tools/exif-viewer', '/privacy', '/methodology']) {
+for (const path of ['/', '/tools', '/tools/image-compressor', '/tools/image-to-pdf', '/tools/image-cropper', '/tools/exif-viewer', '/privacy', '/methodology', '/ja', '/zh/tools', '/ko/tools/image-cropper', '/fr/tools/image-to-pdf', '/it/tools/exif-viewer', '/ja/tools/compress-image-to-kb']) {
   test(`accessibility: ${path} has no serious axe violations`, async ({ page }) => {
     await page.goto(path);
     if (path.startsWith('/tools/')) await expect(page.locator('astro-island[ssr]')).toHaveCount(0);

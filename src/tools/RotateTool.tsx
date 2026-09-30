@@ -1,3 +1,4 @@
+import { t, withI18n } from '../i18n/runtime';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { BatchTool } from '../components/tool-ui/BatchTool';
 import type { BatchItem } from '../components/tool-ui/useBatch';
@@ -5,7 +6,7 @@ import { normalizeRotation, type Rotation } from '../lib/resize';
 import { defaultOutputFor, ImageEngine } from '../services/engine';
 import { animationNote, RASTER_ACCEPT_ATTR, RASTER_HINT, RASTER_INPUTS, toItemResult } from './shared';
 
-export default function RotateTool() {
+function RotateTool() {
   const [rotation, setRotation] = useState<Rotation>(0);
   const [flipH, setFlipH] = useState(false);
   const [flipV, setFlipV] = useState(false);
@@ -39,31 +40,33 @@ export default function RotateTool() {
   const options = (
     <div class="field">
       <span class="field__label" id="rotate-label">
-        Rotate or flip
+        {t('rot.label')}
       </span>
       <div class="button-row" role="group" aria-labelledby="rotate-label">
         <button type="button" class="btn btn--secondary" onClick={() => setRotation(normalizeRotation(rotation - 90))}>
-          ↺ Left 90°
+          {t('rot.left')}
         </button>
         <button type="button" class="btn btn--secondary" onClick={() => setRotation(normalizeRotation(rotation + 90))}>
-          ↻ Right 90°
+          {t('rot.right')}
         </button>
         <button type="button" class="btn btn--secondary" onClick={() => setRotation(normalizeRotation(rotation + 180))}>
-          180°
+          {t('rot.180')}
         </button>
         <button type="button" class="btn btn--secondary" aria-pressed={flipH} onClick={() => setFlipH(!flipH)}>
-          ⇋ Flip horizontal
+          {t('rot.flipH')}
         </button>
         <button type="button" class="btn btn--secondary" aria-pressed={flipV} onClick={() => setFlipV(!flipV)}>
-          ⇵ Flip vertical
+          {t('rot.flipV')}
         </button>
         <button type="button" class="btn btn--ghost" disabled={unchanged} onClick={() => { setRotation(0); setFlipH(false); setFlipV(false); }}>
-          Reset
+          {t('rot.reset')}
         </button>
       </div>
       <p class="field__hint" aria-live="polite">
-        Current: {rotation}°{flipH ? ', mirrored horizontally' : ''}
-        {flipV ? ', flipped vertically' : ''}. The same change is applied to every image in the list.
+        {t('rot.current', { deg: rotation })}
+        {flipH ? t('rot.mirrored') : ''}
+        {flipV ? t('rot.flipped') : ''}
+        {t('rot.applied')}
       </p>
     </div>
   );
@@ -76,22 +79,22 @@ export default function RotateTool() {
       options={options}
       optionsKey={optionsKey}
       autoRun={false}
-      actionLabel="Rotate"
+      actionKey="rotate"
       zipName="rotated-images.zip"
       onItemsChange={onItemsChange}
       preview={() =>
         previewUrl && (
           <div class="rotate-preview">
             {previewFailed ? (
-              <p class="muted">Preview not available for this format in your browser — the rotation will still be applied.</p>
+              <p class="muted">{t('rot.noPreview')}</p>
             ) : (
-              <img ref={imgRef} src={previewUrl} alt="Preview of the first image with the chosen rotation" onError={() => setPreviewFailed(true)} />
+              <img ref={imgRef} src={previewUrl} alt={t('rot.previewAlt')} onError={() => setPreviewFailed(true)} />
             )}
           </div>
         )
       }
       process={async (item, signal) => {
-        if (unchanged) throw new Error('Choose a rotation or flip first.');
+        if (unchanged) throw new Error(t('rot.choose'));
         engine.current ??= new ImageEngine();
         const info = item.info!;
         const out = defaultOutputFor(info.format);
@@ -103,3 +106,5 @@ export default function RotateTool() {
     />
   );
 }
+
+export default withI18n(RotateTool);

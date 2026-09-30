@@ -28,7 +28,7 @@ async function toPng(blob: Blob): Promise<Blob> {
   bitmap.close();
   const png = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
   canvas.width = 0;
-  if (!png) throw new Error('Could not prepare the image for the clipboard.');
+  if (!png) throw new Error('err.clipboardPrep');
   return png;
 }
 

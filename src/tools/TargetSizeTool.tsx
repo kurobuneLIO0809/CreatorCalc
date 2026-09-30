@@ -1,3 +1,4 @@
+import { num, t, withI18n } from '../i18n/runtime';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { BatchTool } from '../components/tool-ui/BatchTool';
 import { NumberField, Segmented } from '../components/tool-ui/fields';
@@ -7,7 +8,7 @@ import { keepOriginal, RASTER_ACCEPT_ATTR, RASTER_HINT, RASTER_INPUTS, toItemRes
 
 const PRESETS = [20, 50, 100, 200, 500, 1000];
 
-export default function TargetSizeTool() {
+function TargetSizeTool() {
   const [targetKb, setTargetKb] = useState<number | ''>(100);
   const [format, setFormat] = useState<'jpeg' | 'webp'>('jpeg');
   const engine = useRef<ImageEngine | null>(null);
@@ -21,7 +22,7 @@ export default function TargetSizeTool() {
       <>
         <div class="field">
           <span class="field__label" id="preset-label">
-            Size limit
+            {t('target.limit')}
           </span>
           <div class="chips" role="group" aria-labelledby="preset-label">
             {PRESETS.map((kb) => (
@@ -32,7 +33,7 @@ export default function TargetSizeTool() {
           </div>
         </div>
         <NumberField
-          label="Or type your own limit"
+          label={t('target.custom')}
           value={targetKb}
           min={5}
           max={50000}
@@ -40,20 +41,18 @@ export default function TargetSizeTool() {
           suffix="KB"
           onChange={setTargetKb}
           hint={
-            budget
-              ? `Files will be at most ${budget.toLocaleString()} bytes, so they pass whether the website counts 1 KB as 1,000 or 1,024 bytes.`
-              : 'Enter a size of at least 5 KB.'
+            budget ? t('target.budget', { bytes: num(budget) }) : t('target.min')
           }
         />
         <Segmented<'jpeg' | 'webp'>
-          label="Output format"
+          label={t('opt.outputFormat')}
           value={format}
           onChange={setFormat}
           options={[
-            { value: 'jpeg', label: 'JPG (accepted everywhere)' },
-            { value: 'webp', label: 'WebP (smaller)' },
+            { value: 'jpeg', label: t('target.jpg') },
+            { value: 'webp', label: t('target.webp') },
           ]}
-          hint="Most application and government forms require JPG."
+          hint={t('target.formsHint')}
         />
       </>
     ),
@@ -67,15 +66,15 @@ export default function TargetSizeTool() {
       formatsHint={RASTER_HINT}
       options={options}
       optionsKey={optionsKey}
-      actionLabel="Compress"
+      actionKey="compress"
       zipName="resized-to-limit.zip"
       compare
       showSavings
       process={async (item, signal) => {
-        if (!budget || budget < 5000) throw new Error('Enter a size limit of at least 5 KB first.');
+        if (!budget || budget < 5000) throw new Error(t('target.enterMin'));
         const info = item.info!;
         if (info.format === format && item.file.size <= budget) {
-          return keepOriginal(item.file, info.format, `Already under ${formatBytes(budget)} — the original was kept unchanged.`, { success: true });
+          return keepOriginal(item.file, info.format, t('target.already', { size: formatBytes(budget) }), { success: true });
         }
         engine.current ??= new ImageEngine();
         const result = await engine.current.process(item.file, info, { output: { format, quality: 0.92 }, targetBytes: budget }, signal);
@@ -83,11 +82,13 @@ export default function TargetSizeTool() {
         r.success = !!result.fitsTarget;
         r.details = [
           result.fitsTarget
-            ? `Exact size: ${result.blob.size.toLocaleString()} bytes (limit ${budget.toLocaleString()})${result.quality ? ` · quality ${Math.round(result.quality * 100)}%` : ''}`
-            : `Could not get under the limit even at the smallest size. Try a larger limit or crop the image first.`,
+            ? t('target.exact', { bytes: num(result.blob.size), limit: num(budget) }) + (result.quality ? t('target.quality', { q: Math.round(result.quality * 100) }) : '')
+            : t('target.missed'),
         ];
         return r;
       }}
     />
   );
 }
+
+export default withI18n(TargetSizeTool);

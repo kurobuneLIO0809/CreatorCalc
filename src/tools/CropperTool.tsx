@@ -1,3 +1,4 @@
+import { t, withI18n } from '../i18n/runtime';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { Dropzone } from '../components/tool-ui/Dropzone';
 import { NumberField, Segmented } from '../components/tool-ui/fields';
@@ -10,16 +11,17 @@ import { decodeHeic, defaultOutputFor, ImageEngine, InputError, inspectFile, isA
 import { FORMAT_INFO } from '../lib/format';
 import { RASTER_ACCEPT_ATTR, RASTER_HINT, RASTER_INPUTS } from './shared';
 
-const ASPECTS: Array<{ value: string; label: string; ratio?: number }> = [
-  { value: 'free', label: 'Free' },
-  { value: 'original', label: 'Original' },
-  { value: '1:1', label: '1:1', ratio: 1 },
-  { value: '4:3', label: '4:3', ratio: 4 / 3 },
-  { value: '3:2', label: '3:2', ratio: 3 / 2 },
-  { value: '16:9', label: '16:9', ratio: 16 / 9 },
-  { value: '9:16', label: '9:16', ratio: 9 / 16 },
-  { value: '4:5', label: '4:5', ratio: 4 / 5 },
+const ASPECTS: Array<{ value: string; ratio?: number }> = [
+  { value: 'free' },
+  { value: 'original' },
+  { value: '1:1', ratio: 1 },
+  { value: '4:3', ratio: 4 / 3 },
+  { value: '3:2', ratio: 3 / 2 },
+  { value: '16:9', ratio: 16 / 9 },
+  { value: '9:16', ratio: 9 / 16 },
+  { value: '4:5', ratio: 4 / 5 },
 ];
+const aspectLabel = (v: string) => (v === 'free' ? t('crop.free') : v === 'original' ? t('crop.original') : v);
 
 const CORNERS: Handle[] = ['nw', 'ne', 'sw', 'se'];
 const EDGES: Handle[] = ['n', 's', 'e', 'w'];
@@ -31,7 +33,7 @@ interface Loaded {
   natural: Size | null;
 }
 
-export default function CropperTool() {
+function CropperTool() {
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [rect, setRect] = useState<Rect | null>(null);
   const [aspect, setAspect] = useState('free');
@@ -84,7 +86,7 @@ export default function CropperTool() {
         bitmap.close();
         const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', 0.9));
         canvas.width = 0;
-        if (!blob) throw new Error('Could not create a preview of this image.');
+        if (!blob) throw new Error(t('crop.previewFail'));
         url = URL.createObjectURL(blob);
       } else {
         url = URL.createObjectURL(file);
@@ -92,7 +94,7 @@ export default function CropperTool() {
       setRect(null);
       setLoaded({ file, info, url, natural: nat });
     } catch (e) {
-      setError(e instanceof InputError || e instanceof Error ? e.message : 'This image could not be opened.');
+      setError(e instanceof InputError || e instanceof Error ? e.message : t('crop.openFail'));
     } finally {
       setBusy(false);
     }
@@ -181,7 +183,7 @@ export default function CropperTool() {
       const r = await engine.current.process(loaded.file, loaded.info, { crop: clampRect(rect, natural!), output: { format: out, quality: 0.92 } }, abort.current.signal);
       setResult({ blob: r.blob, url: URL.createObjectURL(r.blob), name: outputName(loaded.file.name, FORMAT_INFO[r.format].ext, 'cropped'), width: r.width, height: r.height });
     } catch (e) {
-      if (!isAbort(e)) setError(e instanceof Error ? e.message : 'Cropping failed.');
+      if (!isAbort(e)) setError(e instanceof Error ? e.message : t('crop.failed'));
     } finally {
       setBusy(false);
     }
@@ -197,25 +199,25 @@ export default function CropperTool() {
 
   return (
     <div class="tool">
-      <Dropzone acceptAttr={RASTER_ACCEPT_ATTR} multiple={false} compact={!!loaded} hint={`${RASTER_HINT} · one image at a time`} onFiles={onFiles} />
+      <Dropzone acceptAttr={RASTER_ACCEPT_ATTR} multiple={false} compact={!!loaded} hint={t('dz.hintSingle', { formats: RASTER_HINT })} onFiles={onFiles} />
       {error && (
         <p class="notice notice--error" role="alert">
           {error}
         </p>
       )}
-      {busy && !loaded && <p class="muted">Opening image…</p>}
+      {busy && !loaded && <p class="muted">{t('crop.opening')}</p>}
       {loaded && (
         <>
           <div class="crop-stage">
             <div class="crop-stage__inner" onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
-              <img ref={imgRef} src={loaded.url} alt="Image to crop" class="crop-stage__img" onLoad={onImageLoad} draggable={false} onError={() => setError('This image cannot be displayed in your browser.')} />
+              <img ref={imgRef} src={loaded.url} alt={t('crop.alt')} class="crop-stage__img" onLoad={onImageLoad} draggable={false} onError={() => setError(t('crop.cannotDisplay'))} />
               {rect && (
                 <div
                   ref={boxRef}
                   class="crop-box"
                   tabIndex={0}
                   role="group"
-                  aria-label={`Crop area ${Math.round(rect.width)} by ${Math.round(rect.height)} pixels. Arrow keys move it, Shift + arrow keys resize it.`}
+                  aria-label={t('crop.boxLabel', { w: Math.round(rect.width), h: Math.round(rect.height) })}
                   onPointerDown={onPointerDown}
                   onKeyDown={onKeyDown}
                 >
@@ -228,21 +230,21 @@ export default function CropperTool() {
             </div>
           </div>
           <div class="tool__options">
-            <Segmented label="Aspect ratio" value={aspect} onChange={chooseAspect} options={ASPECTS.map((a) => ({ value: a.value, label: a.label }))} />
+            <Segmented label={t('crop.aspect')} value={aspect} onChange={chooseAspect} options={ASPECTS.map((a) => ({ value: a.value, label: aspectLabel(a.value) }))} />
             {rect && (
               <div class="field-grid">
                 <NumberField label="X" value={Math.round(rect.x)} min={0} suffix="px" onChange={(v) => setField('x', v)} />
                 <NumberField label="Y" value={Math.round(rect.y)} min={0} suffix="px" onChange={(v) => setField('y', v)} />
-                <NumberField label="Width" value={Math.round(rect.width)} min={1} suffix="px" onChange={(v) => setField('width', v)} />
-                <NumberField label="Height" value={Math.round(rect.height)} min={1} suffix="px" onChange={(v) => setField('height', v)} />
+                <NumberField label={t('resize.width')} value={Math.round(rect.width)} min={1} suffix="px" onChange={(v) => setField('width', v)} />
+                <NumberField label={t('resize.height')} value={Math.round(rect.height)} min={1} suffix="px" onChange={(v) => setField('height', v)} />
               </div>
             )}
             <Segmented<'same' | OutputFormat>
-              label="Save as"
+              label={t('opt.saveAs')}
               value={format}
               onChange={setFormat}
               options={[
-                { value: 'same', label: 'Same as original' },
+                { value: 'same', label: t('opt.same') },
                 { value: 'jpeg', label: 'JPG' },
                 { value: 'png', label: 'PNG' },
                 { value: 'webp', label: 'WebP' },
@@ -251,25 +253,25 @@ export default function CropperTool() {
           </div>
           <div class="tool__actions">
             <button type="button" class="btn btn--primary" disabled={!rect || busy} onClick={() => void crop()}>
-              {busy ? 'Cropping…' : 'Crop image'}
+              {busy ? t('crop.cropping') : t('crop.crop')}
             </button>
             {busy && (
               <button type="button" class="btn btn--secondary" onClick={() => abort.current?.abort()}>
-                Cancel
+                {t('batch.cancel')}
               </button>
             )}
             <button type="button" class="btn btn--ghost" onClick={reset}>
-              Start over
+              {t('batch.startOver')}
             </button>
           </div>
         </>
       )}
       <div class="visually-hidden" role="status" aria-live="polite">
-        {result ? `Cropped image ready: ${result.width} by ${result.height} pixels.` : ''}
+        {result ? t('crop.ready', { w: result.width, h: result.height }) : ''}
       </div>
       {result && (
         <div class="crop-result">
-          <img src={result.url} alt="Cropped result" />
+          <img src={result.url} alt={t('crop.resultAlt')} />
           <div>
             <p class="result__name">{result.name}</p>
             <p class="result__meta">
@@ -280,7 +282,7 @@ export default function CropperTool() {
             </p>
             <div class="button-row">
               <button type="button" class="btn btn--primary" onClick={() => downloadBlob(result.blob, result.name)}>
-                Download
+                {t('row.download')}
               </button>
               {canCopyImage() && (
                 <button
@@ -292,11 +294,11 @@ export default function CropperTool() {
                       setCopied(true);
                       setTimeout(() => setCopied(false), 2000);
                     } catch {
-                      setError('Copying images is not allowed in this browser. Use Download instead.');
+                      setError(t('batch.copyBlocked'));
                     }
                   }}
                 >
-                  {copied ? 'Copied!' : 'Copy'}
+                  {copied ? t('row.copied') : t('row.copy')}
                 </button>
               )}
             </div>
@@ -306,3 +308,5 @@ export default function CropperTool() {
     </div>
   );
 }
+
+export default withI18n(CropperTool);

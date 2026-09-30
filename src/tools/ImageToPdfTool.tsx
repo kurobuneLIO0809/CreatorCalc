@@ -1,3 +1,4 @@
+import { t, withI18n } from '../i18n/runtime';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { limits, site } from '../config/site';
 import { Dropzone } from '../components/tool-ui/Dropzone';
@@ -21,7 +22,7 @@ interface Page {
 
 let seq = 0;
 
-export default function ImageToPdfTool() {
+function ImageToPdfTool() {
   const [pages, setPages] = useState<Page[]>([]);
   const [size, setSize] = useState<PageSizeId>('a4');
   const [orientation, setOrientation] = useState<PageOrientation>('auto');
@@ -50,7 +51,7 @@ export default function ImageToPdfTool() {
   const onFiles = useCallback(async (files: File[]) => {
     setError(null);
     const room = limits.maxBatchFiles - pagesRef.current.length;
-    if (files.length > room) setError(`Up to ${limits.maxBatchFiles} images can be combined at once.`);
+    if (files.length > room) setError(t('pdf.tooMany', { max: limits.maxBatchFiles }));
     const added: Page[] = [];
     for (const file of files.slice(0, Math.max(0, room))) {
       const page: Page = { id: `p${seq++}`, file };
@@ -59,7 +60,7 @@ export default function ImageToPdfTool() {
         // Thumbnails use the browser's decoder; HEIC shows a placeholder in browsers that can't display it.
         if (page.info.format !== 'heic') page.thumb = URL.createObjectURL(file);
       } catch (e) {
-        page.error = e instanceof InputError ? e.message : 'This file could not be read.';
+        page.error = e instanceof InputError ? e.message : t('batch.unreadable');
       }
       added.push(page);
     }
@@ -128,7 +129,7 @@ export default function ImageToPdfTool() {
         try {
           image = kind === 'jpg' ? await doc.embedJpg(bytes) : await doc.embedPng(bytes);
         } catch {
-          throw new Error(`“${file.name}” could not be added to the PDF. The file may be damaged.`);
+          throw new Error(t('pdf.embedFail', { name: file.name }));
         }
         const place = computePlacement(image.width, image.height, size, orientation, margin);
         const page = doc.addPage([place.pageWidth, place.pageHeight]);
@@ -140,7 +141,7 @@ export default function ImageToPdfTool() {
       const name = valid.length === 1 ? outputName(valid[0].file.name, 'pdf') : `${sanitizeBaseName(valid[0].file.name)}-and-${valid.length - 1}-more.pdf`;
       setPdf({ blob: new Blob([out as BlobPart], { type: 'application/pdf' }), name, pages: valid.length });
     } catch (e) {
-      if (!isAbort(e)) setError(e instanceof Error ? e.message : 'The PDF could not be created.');
+      if (!isAbort(e)) setError(e instanceof Error ? e.message : t('pdf.failed'));
     } finally {
       setBusy(false);
       abort.current = null;
@@ -149,7 +150,7 @@ export default function ImageToPdfTool() {
 
   return (
     <div class="tool">
-      <Dropzone acceptAttr={RASTER_ACCEPT_ATTR} multiple compact={pages.length > 0} disabled={pages.length >= limits.maxBatchFiles} hint={`${RASTER_HINT} · up to ${limits.maxBatchFiles} images`} onFiles={onFiles} />
+      <Dropzone acceptAttr={RASTER_ACCEPT_ATTR} multiple compact={pages.length > 0} disabled={pages.length >= limits.maxBatchFiles} hint={t('dz.hintPdf', { formats: RASTER_HINT, max: limits.maxBatchFiles })} onFiles={onFiles} />
       {error && (
         <p class="notice notice--error" role="alert">
           {error}
@@ -157,7 +158,7 @@ export default function ImageToPdfTool() {
       )}
       {pages.length > 0 && (
         <>
-          <ol class="pages" aria-label="Pages in order">
+          <ol class="pages" aria-label={t('pdf.order')}>
             {pages.map((p, i) => (
               <li class={`page-item${p.error ? ' page-item--error' : ''}`} key={p.id}>
                 <span class="page-item__num" aria-hidden="true">
@@ -171,13 +172,13 @@ export default function ImageToPdfTool() {
                   <p class="result__meta">{p.error ? <span class="result__error">{p.error}</span> : <span>{formatBytes(p.file.size)}</span>}</p>
                 </div>
                 <div class="result__actions">
-                  <button type="button" class="btn btn--icon btn--sm" onClick={() => move(i, -1)} disabled={i === 0 || busy} aria-label={`Move ${p.file.name} up`}>
+                  <button type="button" class="btn btn--icon btn--sm" onClick={() => move(i, -1)} disabled={i === 0 || busy} aria-label={t('pdf.up', { name: p.file.name })}>
                     ↑
                   </button>
-                  <button type="button" class="btn btn--icon btn--sm" onClick={() => move(i, 1)} disabled={i === pages.length - 1 || busy} aria-label={`Move ${p.file.name} down`}>
+                  <button type="button" class="btn btn--icon btn--sm" onClick={() => move(i, 1)} disabled={i === pages.length - 1 || busy} aria-label={t('pdf.down', { name: p.file.name })}>
                     ↓
                   </button>
-                  <button type="button" class="btn btn--icon btn--sm" onClick={() => remove(p.id)} disabled={busy} aria-label={`Remove ${p.file.name}`}>
+                  <button type="button" class="btn btn--icon btn--sm" onClick={() => remove(p.id)} disabled={busy} aria-label={t('row.remove', { name: p.file.name })}>
                     ×
                   </button>
                 </div>
@@ -186,41 +187,41 @@ export default function ImageToPdfTool() {
           </ol>
           <div class="tool__options">
             <Select<PageSizeId>
-              label="Page size"
+              label={t('pdf.pageSize')}
               value={size}
               onChange={setSize}
               options={[
-                { value: 'a4', label: 'A4 (210 × 297 mm)' },
-                { value: 'letter', label: 'US Letter (8.5 × 11 in)' },
-                { value: 'image', label: 'Same as each image' },
+                { value: 'a4', label: t('pdf.a4') },
+                { value: 'letter', label: t('pdf.letter') },
+                { value: 'image', label: t('pdf.sameAsImage') },
               ]}
             />
             {size !== 'image' && (
               <Segmented<PageOrientation>
-                label="Orientation"
+                label={t('pdf.orientation')}
                 value={orientation}
                 onChange={setOrientation}
                 options={[
-                  { value: 'auto', label: 'Auto (per image)' },
-                  { value: 'portrait', label: 'Portrait' },
-                  { value: 'landscape', label: 'Landscape' },
+                  { value: 'auto', label: t('pdf.auto') },
+                  { value: 'portrait', label: t('pdf.portrait') },
+                  { value: 'landscape', label: t('pdf.landscape') },
                 ]}
               />
             )}
             <Segmented<MarginId>
-              label="Margin"
+              label={t('pdf.margin')}
               value={margin}
               onChange={setMargin}
               options={[
-                { value: 'none', label: 'None' },
-                { value: 'small', label: 'Small' },
-                { value: 'large', label: 'Large' },
+                { value: 'none', label: t('pdf.none') },
+                { value: 'small', label: t('pdf.small') },
+                { value: 'large', label: t('pdf.large') },
               ]}
             />
           </div>
           {tooLarge && (
             <p class="notice" role="alert">
-              These images add up to {formatBytes(totalBytes)}. To avoid running out of memory, one PDF can hold at most {formatBytes(limits.maxCombinedBytes)} of images — remove some, or shrink them first with the Image Compressor.
+              {t('pdf.tooLarge', { size: formatBytes(totalBytes), max: formatBytes(limits.maxCombinedBytes) })}
             </p>
           )}
           <div class="tool__actions">
@@ -228,19 +229,19 @@ export default function ImageToPdfTool() {
               <>
                 <progress class="progress" max={Math.max(1, progress.total)} value={progress.done} aria-hidden="true" />
                 <span class="tool__status">
-                  Adding page {Math.min(progress.done + 1, progress.total)} of {progress.total}…
+                  {t('pdf.adding', { n: Math.min(progress.done + 1, progress.total), total: progress.total })}
                 </span>
                 <button type="button" class="btn btn--secondary" onClick={() => abort.current?.abort()}>
-                  Cancel
+                  {t('batch.cancel')}
                 </button>
               </>
             ) : (
               <>
                 <button type="button" class="btn btn--primary" disabled={!valid.length || tooLarge} onClick={() => void build()}>
-                  Create PDF ({valid.length} page{valid.length === 1 ? '' : 's'})
+                  {t('pdf.create', { count: valid.length })}
                 </button>
                 <button type="button" class="btn btn--ghost" onClick={reset}>
-                  Start over
+                  {t('batch.startOver')}
                 </button>
               </>
             )}
@@ -248,7 +249,7 @@ export default function ImageToPdfTool() {
         </>
       )}
       <div class="visually-hidden" role="status" aria-live="polite">
-        {pdf ? `PDF ready with ${pdf.pages} pages.` : busy ? `Adding page ${progress.done + 1} of ${progress.total}` : ''}
+        {pdf ? t('pdf.ready', { count: pdf.pages }) : busy ? t('pdf.adding', { n: progress.done + 1, total: progress.total }) : ''}
       </div>
       {pdf && (
         <div class="result result--done result--pdf">
@@ -259,14 +260,14 @@ export default function ImageToPdfTool() {
             <p class="result__name">{pdf.name}</p>
             <p class="result__meta">
               <span>
-                {pdf.pages} page{pdf.pages === 1 ? '' : 's'}
+                {t('pdf.pages', { count: pdf.pages })}
               </span>
               <span>{formatBytes(pdf.blob.size)}</span>
             </p>
           </div>
           <div class="result__actions">
             <button type="button" class="btn btn--primary" onClick={() => downloadBlob(pdf.blob, pdf.name)}>
-              Download PDF
+              {t('pdf.download')}
             </button>
           </div>
         </div>
@@ -274,3 +275,5 @@ export default function ImageToPdfTool() {
     </div>
   );
 }
+
+export default withI18n(ImageToPdfTool);

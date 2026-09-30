@@ -18,6 +18,12 @@ decision. Nothing here costs money. Do them in order.
 - [ ] **Contact channel.** `site.contactUrl` points to the GitHub issue tracker. If the repository is
       private, visitors cannot open issues — make it public, or set up a free email alias (e.g. Cloudflare
       Email Routing on a custom domain, or a free mailbox) and change the contact page.
+- [ ] **Translations (ja, zh-Hans, ko, fr, it).** Written by hand for this project, not per-page machine
+      output, but **not yet reviewed by native speakers**. Before promoting a language, have someone read
+      its home page, the compressor and "compress to KB" pages and the tool UI (e.g. `/ja/tools/image-compressor`
+      with a file added). Fix wording in `src/i18n/{ui,site,content}/<locale>.ts`. If you do not want a
+      language at launch, remove it from `LOCALES` in `src/i18n/locales.ts` (and from the sitemap map in
+      `astro.config.mjs`) — nothing else needs to change.
 - [ ] **Legal pages.** Read `/privacy` and `/terms` yourself. They are written to match the code but are not
       legal advice; adjust for your country (e.g. operator name/address requirements in Japan or the EU).
 

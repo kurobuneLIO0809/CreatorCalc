@@ -1,3 +1,4 @@
+import { t, withI18n } from '../i18n/runtime';
 import { useState } from 'preact/hooks';
 import { BatchTool } from '../components/tool-ui/BatchTool';
 import { Checkbox } from '../components/tool-ui/fields';
@@ -10,7 +11,35 @@ import { FORMAT_INFO } from '../lib/format';
 
 const ACCEPT: DetectedFormat[] = ['jpeg', 'png', 'webp'];
 
-export default function RemoveExifTool() {
+/** Maps the (English, unit-tested) descriptions from lib/metadata to dictionary keys. */
+const REMOVED_KEYS: Record<string, string> = {
+  'EXIF (camera, date, GPS location…)': 'md.exif',
+  'XMP metadata': 'md.xmp',
+  'Extended XMP metadata': 'md.xmpExt',
+  'APP1 metadata': 'md.app1',
+  'ICC colour profile': 'md.icc',
+  'Multi-picture index (MPF)': 'md.mpf',
+  'APP2 metadata': 'md.app2',
+  'IPTC / Photoshop metadata': 'md.iptc',
+  'JPEG comment': 'md.comment',
+  'Data after end of image (embedded previews, depth or gain maps)': 'md.trailingJpeg',
+  'Data after end of image': 'md.trailing',
+  'Text metadata (tEXt)': 'md.text',
+  'Compressed text metadata (zTXt)': 'md.ztxt',
+  'International text / XMP (iTXt)': 'md.itxt',
+  'Last-modified timestamp (tIME)': 'md.time',
+};
+
+function removedLabel(text: string): string {
+  if (REMOVED_KEYS[text]) return t(REMOVED_KEYS[text]);
+  const app = text.match(/^APP(\d+) metadata$/);
+  if (app) return t('md.appN', { n: app[1] });
+  const chunk = text.match(/^Private chunk \((.+)\)$/);
+  if (chunk) return t('md.private', { name: chunk[1] });
+  return text;
+}
+
+function RemoveExifTool() {
   const [keepOrientation, setKeepOrientation] = useState(true);
   const [keepIcc, setKeepIcc] = useState(true);
   const optionsKey = JSON.stringify({ keepOrientation, keepIcc });
@@ -18,16 +47,16 @@ export default function RemoveExifTool() {
   const options = (
     <>
       <Checkbox
-        label="Keep the orientation flag"
+        label={t('rx.keepOrientation')}
         checked={keepOrientation}
         onChange={setKeepOrientation}
-        hint="Keeps photos upright. It only stores a rotation value (1–8) — no personal information."
+        hint={t('rx.keepOrientationHint')}
       />
       <Checkbox
-        label="Keep the colour profile"
+        label={t('rx.keepIcc')}
         checked={keepIcc}
         onChange={setKeepIcc}
-        hint="Keeps colours accurate (e.g. iPhone “Display P3” photos). Colour profiles describe the screen/camera colour space, not you."
+        hint={t('rx.keepIccHint')}
       />
     </>
   );
@@ -39,12 +68,12 @@ export default function RemoveExifTool() {
       formatsHint="JPG, PNG, WebP"
       options={options}
       optionsKey={optionsKey}
-      actionLabel="Clean"
+      actionKey="clean"
       zipName="photos-without-metadata.zip"
       wrongFormatMessage={(f) =>
         f === 'heic'
-          ? 'HEIC metadata cannot be removed without converting. Use HEIC to JPG — converted files contain no metadata at all.'
-          : `${formatLabel(f)} files are not supported. Convert to JPG or PNG with the Image Converter; converted files contain no metadata.`
+          ? t('rx.heic')
+          : t('rx.unsupported', { format: formatLabel(f) })
       }
       process={async (item) => {
         const info = item.info!;
@@ -63,10 +92,12 @@ export default function RemoveExifTool() {
           height: info.height,
           notes: [],
           details: removed.length
-            ? [`Removed: ${removed.join(' · ')}`, 'Image data copied unchanged — no quality loss.']
-            : ['No removable metadata was found. The image data is unchanged.'],
+            ? [t('rx.removed', { list: removed.map(removedLabel).join(' · ') }), t('rx.lossless')]
+            : [t('rx.none')],
         };
       }}
     />
   );
 }
+
+export default withI18n(RemoveExifTool);

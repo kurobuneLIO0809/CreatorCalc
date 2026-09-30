@@ -1,0 +1,145 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolIsland from '../components/ToolIsland.astro';
+import ToolGrid from '../components/ToolGrid.astro';
+import { site } from '../config/site';
+import { toolPath, type ToolSlug } from '../data/tools';
+import { LOCALE_INFO, localePath, localizedTools, siteT, toolAlternates, toolContent, type Locale } from '../i18n';
+
+interface Props {
+  slug: ToolSlug;
+  locale: Locale;
+}
+
+const { slug, locale } = Astro.props;
+const tr = siteT(locale);
+const tools = localizedTools(locale);
+const tool = tools.find((t) => t.slug === slug)!;
+const c = toolContent(locale, slug);
+const related = tool.related.map((r) => tools.find((t) => t.slug === r)).filter((t) => t !== undefined);
+const origin = (Astro.site?.toString() ?? '').replace(/\/+$/, '');
+const path = localePath(locale, toolPath(slug));
+const url = `${origin}${path}`;
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: tool.h1,
+    url,
+    description: tool.description,
+    inLanguage: LOCALE_INFO[locale].htmlLang,
+    applicationCategory: 'MultimediaApplication',
+    operatingSystem: 'Any (web browser)',
+    browserRequirements: 'Requires JavaScript and a modern browser',
+    isAccessibleForFree: true,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    publisher: { '@type': 'Organization', name: site.name, url: `${origin}/` },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: tr('nav.home'), item: `${origin}${localePath(locale, '/')}` },
+      { '@type': 'ListItem', position: 2, name: tr('nav.tools'), item: `${origin}${localePath(locale, '/tools')}` },
+      { '@type': 'ListItem', position: 3, name: tool.name, item: url },
+    ],
+  },
+];
+---
+
+<BaseLayout title={tool.title} description={tool.description} path={path} ogImage={`/og/${tool.slug}.png`} jsonLd={jsonLd} locale={locale} alternates={toolAlternates(slug)}>
+  <div class="container">
+    <header class="page-head">
+      <nav class="breadcrumbs" aria-label={tr('nav.breadcrumb')}>
+        <ol>
+          <li><a href={localePath(locale, '/')}>{tr('nav.home')}</a></li>
+          <li><a href={localePath(locale, '/tools')}>{tr('nav.tools')}</a></li>
+          <li aria-current="page">{tool.name}</li>
+        </ol>
+      </nav>
+      <h1>{tool.h1}</h1>
+      <p class="page-head__lead">{tool.tagline}</p>
+      <p class="privacy-pill">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z" fill="none" stroke="currentColor" stroke-width="2"></path></svg>
+        {tr('tool.privacyPill')}
+      </p>
+    </header>
+
+    <section class="tool-card" aria-label={tr('tool.region', { name: tool.name })}>
+      <ToolIsland slug={tool.slug} locale={locale} />
+    </section>
+
+    <div class="content-grid">
+      <section class="content-block prose" aria-labelledby="about-heading">
+        <h2 id="about-heading">{tr('tool.about')}</h2>
+        {c.intro.map((p) => <p>{p}</p>)}
+      </section>
+
+      <section class="content-block" aria-labelledby="howto-heading">
+        <h2 id="howto-heading">{tr('tool.howTo')}</h2>
+        <ol class="steps">
+          {c.steps.map((s) => <li>{s}</li>)}
+        </ol>
+      </section>
+
+      <section class="content-block" aria-labelledby="uses-heading">
+        <h2 id="uses-heading">{tr('tool.uses')}</h2>
+        <div class="use-cases">
+          {
+            c.useCases.map((u) => (
+              <div class="use-case">
+                <h3>{u.title}</h3>
+                <p>{u.text}</p>
+              </div>
+            ))
+          }
+        </div>
+      </section>
+
+      <section class="content-block" aria-labelledby="specs-heading">
+        <h2 id="specs-heading">{tr('tool.specs')}</h2>
+        <table class="spec-table">
+          <tbody>
+            {
+              c.specs.map(([k, v]) => (
+                <tr>
+                  <th scope="row">{k}</th>
+                  <td>{v}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </section>
+
+      <section class="content-block prose" aria-labelledby="limits-heading">
+        <h2 id="limits-heading">{tr('tool.limits')}</h2>
+        <ul class="limits">
+          {c.limits.map((l) => <li>{l}</li>)}
+        </ul>
+        <p class="muted">
+          {tr('tool.methodology').split('{link}')[0]}<a href="/methodology">{tr('tool.methodologyLink')}</a>{tr('tool.methodology').split('{link}')[1]}
+        </p>
+      </section>
+
+      <section class="content-block faq" aria-labelledby="faq-heading">
+        <h2 id="faq-heading">{tr('tool.faq')}</h2>
+        {
+          c.faq.map((f) => (
+            <details>
+              <summary>{f.q}</summary>
+              <p>{f.a}</p>
+            </details>
+          ))
+        }
+      </section>
+
+      <section class="content-block" aria-labelledby="related-heading">
+        <h2 id="related-heading">{tr('tool.related')}</h2>
+        <ToolGrid tools={related} locale={locale} />
+      </section>
+    </div>
+  </div>
+  <script is:inline data-tool-slug={tool.slug} src="/recent.js"></script>
+</BaseLayout>

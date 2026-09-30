@@ -1,3 +1,4 @@
+import { t } from '../../i18n/runtime';
 import { useEffect, useRef, useState } from 'preact/hooks';
 
 interface DropzoneProps {
@@ -97,9 +98,9 @@ export function Dropzone({ acceptAttr, multiple, hint, compact, disabled, onFile
           <path d="M10 29v6a4 4 0 0 0 4 4h20a4 4 0 0 0 4-4v-6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
         </svg>
       )}
-      {!compact && <p class="dropzone__title">{title ?? (multiple ? 'Drop images here' : 'Drop an image here')}</p>}
+      {!compact && <p class="dropzone__title">{title ?? (multiple ? t('dz.titleMulti') : t('dz.titleSingle'))}</p>}
       <button type="button" class={`btn ${compact ? 'btn--secondary' : 'btn--primary btn--lg'}`} onClick={open} disabled={disabled}>
-        {compact ? (multiple ? '+ Add more files' : 'Choose a different image') : multiple ? 'Choose images' : 'Choose image'}
+        {compact ? (multiple ? t('dz.addMore') : t('dz.chooseOther')) : multiple ? t('dz.chooseMulti') : t('dz.chooseSingle')}
       </button>
       {!compact && <p class="dropzone__hint">{hint}</p>}
     </div>

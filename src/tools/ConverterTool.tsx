@@ -1,3 +1,4 @@
+import { t, withI18n } from '../i18n/runtime';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { BatchTool } from '../components/tool-ui/BatchTool';
 import { Checkbox, ColorField, Segmented, Slider } from '../components/tool-ui/fields';
@@ -10,7 +11,8 @@ export type ConverterId = 'image-converter' | 'heic-to-jpg' | 'webp-to-jpg' | 'p
 interface ConverterConfig {
   accept: readonly DetectedFormat[];
   acceptAttr: string;
-  hint: string;
+  /** Formats hint (a dictionary key or a plain format list). */
+  hint: () => string;
   outputs: OutputFormat[];
   defaultOutput: OutputFormat;
   defaultQuality: number;
@@ -19,14 +21,13 @@ interface ConverterConfig {
   wrongFormat?: (f: DetectedFormat) => string | undefined;
 }
 
-const toConverter = (f: DetectedFormat) =>
-  `This is a ${formatLabel(f)} file. Use the Image Converter to convert ${formatLabel(f)} images.`;
+const toConverter = (f: DetectedFormat) => t('msg.useConverter', { format: formatLabel(f) });
 
 const CONFIGS: Record<ConverterId, ConverterConfig> = {
   'image-converter': {
     accept: [...RASTER_INPUTS, 'tiff'],
     acceptAttr: `${RASTER_ACCEPT_ATTR},.tif,.tiff`,
-    hint: `${RASTER_HINT}, TIFF (Safari)`,
+    hint: () => t('conv.hintAll', { formats: RASTER_HINT }),
     outputs: ['jpeg', 'png', 'webp'],
     defaultOutput: 'jpeg',
     defaultQuality: 90,
@@ -35,17 +36,17 @@ const CONFIGS: Record<ConverterId, ConverterConfig> = {
   'heic-to-jpg': {
     accept: ['heic'],
     acceptAttr: '.heic,.heif,image/heic,image/heif',
-    hint: 'HEIC / HEIF photos from iPhone or iPad',
+    hint: () => t('conv.hintHeic'),
     outputs: ['jpeg', 'png'],
     defaultOutput: 'jpeg',
     defaultQuality: 90,
     zipName: 'heic-to-jpg.zip',
-    wrongFormat: (f) => (f === 'jpeg' ? sameFormatMessage(f) : `This is a ${formatLabel(f)} file, not HEIC. Use the Image Converter for ${formatLabel(f)} images.`),
+    wrongFormat: (f) => (f === 'jpeg' ? sameFormatMessage(f) : t('msg.notHeic', { format: formatLabel(f) })),
   },
   'webp-to-jpg': {
     accept: ['webp'],
     acceptAttr: '.webp,image/webp',
-    hint: 'WebP images (animated WebP: first frame)',
+    hint: () => t('conv.hintWebp'),
     outputs: ['jpeg', 'png'],
     defaultOutput: 'jpeg',
     defaultQuality: 90,
@@ -55,7 +56,7 @@ const CONFIGS: Record<ConverterId, ConverterConfig> = {
   'png-to-jpg': {
     accept: ['png'],
     acceptAttr: '.png,image/png',
-    hint: 'PNG images',
+    hint: () => t('conv.hintPng'),
     outputs: ['jpeg'],
     defaultOutput: 'jpeg',
     defaultQuality: 90,
@@ -66,7 +67,7 @@ const CONFIGS: Record<ConverterId, ConverterConfig> = {
   'jpg-to-png': {
     accept: ['jpeg'],
     acceptAttr: '.jpg,.jpeg,image/jpeg',
-    hint: 'JPG / JPEG images',
+    hint: () => t('conv.hintJpg'),
     outputs: ['png'],
     defaultOutput: 'png',
     defaultQuality: 100,
@@ -76,7 +77,7 @@ const CONFIGS: Record<ConverterId, ConverterConfig> = {
   'image-to-webp': {
     accept: ['jpeg', 'png', 'bmp', 'gif'],
     acceptAttr: '.jpg,.jpeg,.png,.bmp,.gif,image/jpeg,image/png,image/bmp,image/gif',
-    hint: 'JPG, PNG, BMP, GIF',
+    hint: () => 'JPG, PNG, BMP, GIF',
     outputs: ['webp'],
     defaultOutput: 'webp',
     defaultQuality: 80,
@@ -86,7 +87,7 @@ const CONFIGS: Record<ConverterId, ConverterConfig> = {
   },
 };
 
-export default function ConverterTool({ id }: { id: ConverterId }) {
+function ConverterTool({ id }: { id: ConverterId }) {
   const cfg = CONFIGS[id];
   const [output, setOutput] = useState<OutputFormat>(cfg.defaultOutput);
   const [quality, setQuality] = useState(cfg.defaultQuality);
@@ -102,33 +103,33 @@ export default function ConverterTool({ id }: { id: ConverterId }) {
     () => (
       <>
         {cfg.outputs.length > 1 && (
-          <Segmented<OutputFormat> label="Convert to" value={output} onChange={setOutput} options={OUTPUT_OPTIONS.filter((o) => cfg.outputs.includes(o.value))} />
+          <Segmented<OutputFormat> label={t('conv.to')} value={output} onChange={setOutput} options={OUTPUT_OPTIONS.filter((o) => cfg.outputs.includes(o.value))} />
         )}
         {output === 'webp' && (
           <Checkbox
-            label="Lossless WebP"
+            label={t('conv.lossless')}
             checked={lossless}
             onChange={setLossless}
-            hint="Best for screenshots, logos and graphics with sharp edges. Photos are much smaller with lossy WebP."
+            hint={t('conv.losslessHint')}
           />
         )}
         {lossy && (
           <Slider
-            label="Quality"
+            label={t('conv.quality')}
             value={quality}
             min={30}
             max={100}
             suffix="%"
             onChange={setQuality}
-            hint={output === 'jpeg' ? '90% looks identical to the original for almost all photos.' : '75–85% is a good default for websites.'}
+            hint={output === 'jpeg' ? t('conv.qualityJpg') : t('conv.qualityWebp')}
           />
         )}
         {output === 'jpeg' && (
-          <ColorField label="Background for transparent areas" value={background} onChange={setBackground} hint="JPG cannot store transparency, so transparent pixels are filled with this colour." />
+          <ColorField label={t('conv.bg')} value={background} onChange={setBackground} hint={t('conv.bgHint')} />
         )}
         {output === 'png' && id === 'jpg-to-png' && (
           <p class="field__hint">
-            PNG output is lossless: it keeps the JPG exactly as it is now. It will not restore detail lost in the JPG or make the background transparent.
+            {t('conv.pngNote')}
           </p>
         )}
       </>
@@ -140,10 +141,10 @@ export default function ConverterTool({ id }: { id: ConverterId }) {
     <BatchTool
       accept={cfg.accept}
       acceptAttr={cfg.acceptAttr}
-      formatsHint={cfg.hint}
+      formatsHint={cfg.hint()}
       options={options}
       optionsKey={optionsKey}
-      actionLabel="Convert"
+      actionKey="convert"
       zipName={cfg.zipName}
       showSavings={cfg.showSavings}
       wrongFormatMessage={cfg.wrongFormat}
@@ -163,3 +164,5 @@ export default function ConverterTool({ id }: { id: ConverterId }) {
     />
   );
 }
+
+export default withI18n(ConverterTool);

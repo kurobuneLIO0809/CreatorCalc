@@ -4,7 +4,8 @@
 
 Wrenfile is a static website of image tools that run entirely in the browser:
 compress, compress to an exact KB size, resize, convert (WebP, PNG, JPG, AVIF…), image → PDF, crop,
-rotate, and view/remove EXIF metadata. (Renamed from the working title "QuickConvert", see docs/strategy.md §9.) There is no backend, no database, no upload endpoint and no paid API,
+rotate, and view/remove EXIF metadata. The site is available in **English, Japanese, Simplified Chinese,
+Korean, French and Italian** (English at `/`, other languages at `/ja`, `/zh`, `/ko`, `/fr`, `/it`). (Renamed from the working title "QuickConvert", see docs/strategy.md §9.) There is no backend, no database, no upload endpoint and no paid API,
 so it can be hosted for free on Cloudflare Pages.
 
 - Why this product and these tools: [docs/strategy.md](docs/strategy.md)
@@ -126,7 +127,16 @@ src/
   components/               Astro components (header, footer, grids, search)
   components/tool-ui/       shared Preact UI: Dropzone, BatchTool, fields, CompareSlider, useBatch
   tools/                    one Preact app per tool (or tool family)
-  layouts/, pages/, styles/
+  i18n/                     translations (see "Languages" below)
+    locales.ts              locale list, URL prefixes, translate() with {placeholders} and _one/_other plurals
+    ui/<locale>.ts          tool UI strings (shipped to the browser, one dictionary per page)
+    site/<locale>.ts        page chrome: header, footer, home, tools index, tool-page headings
+    content/<locale>.ts     translated tool titles/descriptions and full tool-page content
+    index.ts                build-time helpers (localizedTools, toolContent, hreflang alternates)
+    runtime.tsx             t(), withI18n() wrapper for islands
+  views/                    HomePage / ToolsIndexPage / ToolPage, shared by all languages
+  pages/                    English routes + pages/[lang]/… for the other languages
+  layouts/, styles/
 public/                     _headers, icons, OG images, tiny theme/recent-tools scripts
 scripts/                    postbuild checks, Cloudflare-like preview server, OG image generator
 tests/unit, tests/e2e       Vitest and Playwright suites
@@ -160,11 +170,30 @@ only on those pages, and update the privacy policy and consent handling first. S
 - Contact channel: `site.contactUrl` (currently the GitHub issue tracker; set a support email before applying
   for AdSense).
 
+## Languages
+
+- English is the source language and lives at the root URLs; each other language has a prefix
+  (`/ja/tools/image-resizer`). About, Privacy, Terms, Contact and Methodology are English-only and are
+  labelled "(English)" in the other languages' navigation.
+- A tool page is generated in a language only when **both** its metadata and its full page content exist in
+  `src/i18n/content/<locale>.ts` (`hasTranslation`). Pages link to each other with reciprocal `hreflang` +
+  `x-default` (checked by `scripts/postbuild.mjs`) and the sitemap carries the same alternates.
+- Tool islands receive `locale` + `messages` props; services and the worker return message **keys**
+  (`err.decode`, `{ key: 'note.memoryLimit', params }`) that are translated on the page.
+- Adding a language: add it to `LOCALES` in `src/i18n/locales.ts`, create `ui/`, `site/` and `content/`
+  files (TypeScript enforces complete `ui`/`site` dictionaries; `tests/unit/i18n.test.ts` checks keys,
+  placeholders and page structure), register it in `src/i18n/index.ts` and the sitemap `i18n.locales` map in
+  `astro.config.mjs`.
+- The translations were written for this project (not machine-generated per page) but have **not been
+  reviewed by native speakers yet** — see docs/launch-checklist.md.
+- If `features.heicDecoder` is switched on, translated pages are withheld (their texts describe the HEIC-off
+  build) until they are updated.
+
 ## What to add next
 
 See the TOP-20 list in [docs/roadmap.md](docs/roadmap.md). Highest priority: search-data-driven improvements,
-passport/ID photo maker, PDF merge/split, WebP/AVIF output improvements, GIF maker, and localization of the
-best pages.
+passport/ID photo maker, PDF merge/split, WebP/AVIF output improvements, GIF maker, and deciding per
+language (roadmap R6) whether each translation earns its place.
 
 ## Licence notes
 

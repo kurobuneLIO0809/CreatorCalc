@@ -1,3 +1,4 @@
+import { t } from '../../i18n/runtime';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { limits } from '../../config/site';
 import type { DetectedFormat } from '../../lib/format';
@@ -71,7 +72,7 @@ export function useBatch(accept: readonly DetectedFormat[], wrongFormatMessage?:
       let accepted = files;
       if (files.length > room) {
         accepted = files.slice(0, Math.max(0, room));
-        setNotice(`Up to ${limits.maxBatchFiles} files can be processed at once. ${files.length - accepted.length} file(s) were not added.`);
+        setNotice(t('batch.tooMany', { max: limits.maxBatchFiles, skipped: files.length - accepted.length }));
       }
       const added: BatchItem[] = [];
       for (const file of accepted) {
@@ -81,7 +82,7 @@ export function useBatch(accept: readonly DetectedFormat[], wrongFormatMessage?:
         } catch (error) {
           item.invalid = true;
           item.status = 'error';
-          let message = error instanceof InputError ? error.message : 'This file could not be read.';
+          let message = error instanceof InputError ? error.message : t('batch.unreadable');
           // Offer a friendlier explanation when the file is a valid image of another format.
           if (error instanceof InputError && error.format) message = wrongFormatMessage?.(error.format) ?? message;
           item.error = message;
@@ -125,7 +126,7 @@ export function useBatch(accept: readonly DetectedFormat[], wrongFormatMessage?:
           patch(item.id, { status: 'pending' });
           break;
         }
-        patch(item.id, { status: 'error', error: error instanceof Error ? error.message : 'Processing failed.' });
+        patch(item.id, { status: 'error', error: error instanceof Error ? error.message : t('batch.failed') });
       }
       done += 1;
       setProgress({ done, total: queue.length });
@@ -143,7 +144,7 @@ export function useBatch(accept: readonly DetectedFormat[], wrongFormatMessage?:
     controllerRef.current = null;
     setRunning(false);
     commit(itemsRef.current.map((it) => (it.status === 'processing' ? { ...it, status: 'pending' } : it)));
-    setNotice('Cancelled. Files that were not finished can be processed again.');
+    setNotice(t('batch.cancelled'));
   }, []);
 
   const reset = useCallback(() => {

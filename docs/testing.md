@@ -6,13 +6,13 @@ _Last run: 2026-09-30 (Node 22.22, Chromium 140 headless, Playwright 1.55, Vites
 
 | Suite | Command | Result |
 |---|---|---|
-| Type check (Astro + TS) | `npm run check` | **0 errors, 0 warnings** (66 files) |
-| Unit tests | `npm test` | **52 / 52 passed** (incl. Search Console analyzer) |
-| Build + post-build checks | `npm run build` | **OK** — 21 HTML pages validated (title, description, canonical, OG, single H1, CSP meta, no inline styles, no duplicate titles/descriptions, **no broken internal links**, licence notice present, **HEIC decoder not shipped**) |
-| E2E — local Cloudflare-like server | `npm run test:e2e` | **102 passed**, 5 skipped (2 mobile-only tests on the desktop project, 3 tests that only apply when HEIC is enabled) |
-| E2E — `wrangler pages dev` (Cloudflare's own asset server & `_headers`) | `BASE_URL=http://127.0.0.1:8788 npx playwright test` | **102 passed**, 5 skipped |
-| Lighthouse 12 (mobile emulation) | /, compress-image-to-kb, image-converter (+ image-to-pdf, methodology in the previous run) | **99–100 / 100 / 100 / 100** (Perf / A11y / Best practices / SEO); LCP 1.2–1.7 s, CLS 0, TBT 0–70 ms |
-| axe-core (WCAG 2.1 A/AA) | in E2E | **0 serious/critical violations** on 8 pages + a tool with results in dark mode, desktop and mobile |
+| Type check (Astro + TS) | `npm run check` | **0 errors, 0 warnings** |
+| Unit tests | `npm test` | **73 / 73 passed** (incl. Search Console analyzer and i18n dictionaries) |
+| Build + post-build checks | `npm run build` | **OK** — 96 HTML pages in 6 languages validated (title, description, canonical, OG, single H1, `<html lang>`, CSP meta, no inline styles, no duplicate titles/descriptions, **no broken internal links**, **reciprocal hreflang + x-default**, licence notice present, **HEIC decoder not shipped**) |
+| E2E — local Cloudflare-like server | `npm run test:e2e` | **193 passed**, 5 skipped (2 mobile-only tests on the desktop project, 3 tests that only apply when HEIC is enabled) |
+| E2E — `wrangler pages dev` (Cloudflare's own asset server & `_headers`) | `BASE_URL=http://127.0.0.1:8788 npx playwright test tests/e2e/i18n.spec.ts tests/e2e/smoke.spec.ts --project=desktop` | **104 passed** (full suite: 102 passed in the previous run) |
+| Lighthouse 12 (mobile emulation) | /, compress-image-to-kb, image-converter; /ja, /ko/tools/image-compressor, /fr/tools/compress-image-to-kb | **99–100 / 100 / 100 / 100** (Perf / A11y / Best practices / SEO) |
+| axe-core (WCAG 2.1 A/AA) | in E2E | **0 serious/critical violations** on 14 pages (incl. ja, zh, ko, fr, it) + a tool with results in dark mode, desktop and mobile |
 
 ## A global "no upload" guard
 
@@ -58,6 +58,20 @@ production Content-Security-Policy.
 | Robustness | truncated HEIC → clear error (no hang) and the next HEIC still converts; **main-thread fallback with `OffscreenCanvas` removed** (simulates Safari < 16.4) produces real WebP files |
 | Image to PDF | 3 images reordered → 3-page PDF, landscape A4 page, **original JPG bytes embedded unchanged**; image-sized pages incl. HEIC; bad files listed but excluded |
 | Crop / rotate / EXIF | 1:1 crop with numeric width → 500×500; keyboard moves crop frame; rotate right on an orientation-6 photo; EXIF viewer shows camera + GPS warning, "No GPS" for clean PNG; Remove EXIF → GPS gone and **pixels bit-identical** |
+
+### Languages (`i18n.spec.ts`) — desktop
+
+- Every translated page (5 languages × home, tools index, 13 tool pages = 75 pages): HTTP 200, correct
+  `<html lang>`, self-referencing canonical and hreflang, `x-default` → English, no horizontal overflow, the
+  island hydrates with that language's strings, and tool links stay inside the language.
+- The language menu on an English tool page leads to the same tool in Japanese; English-only pages have no
+  hreflang and send each language to its home page.
+- Japanese compressor end to end: result text, a fake file error and a worker decode error are all
+  Japanese (worker errors travel as message keys); download name unchanged.
+- French "compress to KB" run reports byte counts in French.
+- `tests/unit/i18n.test.ts`: every dictionary has exactly the English keys and the same `{placeholders}`;
+  every published tool is fully translated with the same number of steps/use cases/specs/FAQ as English;
+  related links stay within translated pages; no HEIC support claims while the decoder is off.
 
 ### Mobile & accessibility (`mobile.spec.ts`)
 

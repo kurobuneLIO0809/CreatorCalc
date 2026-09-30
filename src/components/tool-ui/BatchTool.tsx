@@ -1,7 +1,8 @@
 import type { ComponentChildren } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { limits } from '../../config/site';
-import { describeChange, formatBytes, percentChange } from '../../lib/bytes';
+import { formatBytes, percentChange } from '../../lib/bytes';
+import { t } from '../../i18n/runtime';
 import type { DetectedFormat } from '../../lib/format';
 import { buildZip } from '../../lib/zip';
 import { canCopyImage, copyImageToClipboard, downloadBlob } from '../../services/download';
@@ -20,7 +21,8 @@ export interface BatchToolProps {
   process: Processor;
   /** Process files as soon as they are added (default true). */
   autoRun?: boolean;
-  actionLabel: string;
+  /** Verb for the main button: action.<key>_one / _other in the UI dictionary. */
+  actionKey: 'compress' | 'convert' | 'resize' | 'rotate' | 'clean';
   zipName: string;
   wrongFormatMessage?: (format: DetectedFormat) => string | undefined;
   /** Show a before/after comparison for results. */
@@ -35,8 +37,16 @@ export interface BatchToolProps {
 
 const LIVE_RERUN_LIMIT = 3;
 
+/** Localised "42% smaller" / "10% larger". */
+export function describeChange(before: number, after: number): string {
+  const pct = percentChange(before, after);
+  if (pct < 0) return t('change.smaller', { pct: Math.abs(pct) });
+  if (pct > 0) return t('change.larger', { pct });
+  return t('change.same');
+}
+
 export function BatchTool(props: BatchToolProps) {
-  const { accept, acceptAttr, formatsHint, options, optionsKey, autoRun = true, actionLabel, zipName, compare, showSavings } = props;
+  const { accept, acceptAttr, formatsHint, options, optionsKey, autoRun = true, actionKey, zipName, compare, showSavings } = props;
   const batch = useBatch(accept, props.wrongFormatMessage);
   const { items, running, progress, notice } = batch;
   const processRef = useRef(props.process);
@@ -81,8 +91,8 @@ export function BatchTool(props: BatchToolProps) {
   }, [stale, optionsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (running) setStatus(`Processing file ${Math.min(progress.done + 1, progress.total)} of ${progress.total}…`);
-    else if (done.length) setStatus(`${done.length} file${done.length > 1 ? 's' : ''} ready to download.`);
+    if (running) setStatus(t('batch.processing', { n: Math.min(progress.done + 1, progress.total), total: progress.total }));
+    else if (done.length) setStatus(t('batch.ready', { count: done.length }));
     else setStatus('');
   }, [running, progress.done, progress.total, done.length]);
 
@@ -96,7 +106,7 @@ export function BatchTool(props: BatchToolProps) {
 
   const downloadAll = async () => {
     if (zipTooLarge) {
-      batch.setNotice(`The results add up to ${formatBytes(totals.after)}, too much to zip safely in the browser. Please download the files individually.`);
+      batch.setNotice(t('batch.zipTooLarge', { size: formatBytes(totals.after) }));
       return;
     }
     const entries = await Promise.all(done.map(async (it) => ({ name: it.result!.name, data: new Uint8Array(await it.result!.blob.arrayBuffer()) })));
@@ -110,7 +120,7 @@ export function BatchTool(props: BatchToolProps) {
       setCopied(item.id);
       setTimeout(() => setCopied(null), 2000);
     } catch {
-      batch.setNotice('Copying images is not allowed in this browser. Use Download instead.');
+      batch.setNotice(t('batch.copyBlocked'));
     }
   };
 
@@ -132,7 +142,7 @@ export function BatchTool(props: BatchToolProps) {
         multiple
         compact={hasItems}
         disabled={items.length >= limits.maxBatchFiles}
-        hint={`${formatsHint} · up to ${limits.maxBatchFiles} files, ${Math.round(limits.maxFileBytes / 1048576)} MB each · you can also paste an image`}
+        hint={t('dz.hintBatch', { formats: formatsHint, max: limits.maxBatchFiles, mb: Math.round(limits.maxFileBytes / 1048576) })}
         onFiles={onFiles}
       />
 
@@ -140,7 +150,7 @@ export function BatchTool(props: BatchToolProps) {
 
       <div class={`tool__layout${hasItems ? ' has-items' : ''}${autoRun ? '' : ' options-first'}`}>
         {options && (
-          <div class="tool__options" role="group" aria-label="Settings">
+          <div class="tool__options" role="group" aria-label={t('batch.settings')}>
             {options}
           </div>
         )}
@@ -163,7 +173,7 @@ export function BatchTool(props: BatchToolProps) {
                   <progress class="progress" max={Math.max(1, progress.total)} value={progress.done} aria-hidden="true" />
                   <span class="tool__status">{status}</span>
                   <button type="button" class="btn btn--secondary" onClick={batch.cancel}>
-                    Cancel
+                    {t('batch.cancel')}
                   </button>
                 </>
               ) : (
@@ -171,13 +181,15 @@ export function BatchTool(props: BatchToolProps) {
                   {(!autoRun || stale || valid.some((it) => it.status === 'pending' || it.status === 'error')) && valid.length > 0 && (
                     <button type="button" class="btn btn--primary" onClick={() => void start()}>
                       {autoRun && (stale || ranKey !== null)
-                        ? `Apply settings to ${valid.length === 1 ? 'the image' : `all ${valid.length} images`}`
-                        : `${actionLabel} ${valid.length === 1 ? 'image' : `${valid.length} images`}`}
+                        ? valid.length === 1
+                          ? t('batch.applyOne')
+                          : t('batch.applyAll', { count: valid.length })
+                        : t(`action.${actionKey}`, { count: valid.length })}
                     </button>
                   )}
                   {done.length > 1 && (
                     <button type="button" class="btn btn--primary" onClick={() => void downloadAll()}>
-                      Download all (.zip)
+                      {t('batch.downloadAll')}
                     </button>
                   )}
                   <button
@@ -189,7 +201,7 @@ export function BatchTool(props: BatchToolProps) {
                       setCompareId(null);
                     }}
                   >
-                    Start over
+                    {t('batch.startOver')}
                   </button>
                 </>
               )}
@@ -198,12 +210,12 @@ export function BatchTool(props: BatchToolProps) {
 
           {showSavings && done.length > 1 && !running && (
             <p class="tool__summary">
-              Total: {formatBytes(totals.before)} → <strong>{formatBytes(totals.after)}</strong> ({describeChange(totals.before, totals.after)})
+              {t('batch.total')} {formatBytes(totals.before)} → <strong>{formatBytes(totals.after)}</strong> ({describeChange(totals.before, totals.after)})
             </p>
           )}
 
           {hasItems && (
-            <ul class="results" aria-label="Files">
+            <ul class="results" aria-label={t('batch.files')}>
               {items.map((item) => (
                 <ResultRow
                   key={item.id}
@@ -223,8 +235,8 @@ export function BatchTool(props: BatchToolProps) {
           )}
 
           {compareItem && originalUrl && (
-            <section class="tool__compare" aria-label="Before and after comparison">
-              <CompareSlider beforeUrl={originalUrl} afterUrl={compareItem.result!.url} beforeLabel="Original" afterLabel="Result" />
+            <section class="tool__compare" aria-label={t('batch.compareRegion')}>
+              <CompareSlider beforeUrl={originalUrl} afterUrl={compareItem.result!.url} beforeLabel={t('batch.original')} afterLabel={t('batch.result')} />
             </section>
           )}
         </div>
@@ -260,8 +272,8 @@ function ResultRow({ item, showSavings, canCompare, comparing, copied, canCopy, 
           {r?.name ?? item.file.name}
         </p>
         <p class="result__meta">
-          {item.status === 'pending' && <span>Waiting…</span>}
-          {item.status === 'processing' && <span>Processing…</span>}
+          {item.status === 'pending' && <span>{t('row.waiting')}</span>}
+          {item.status === 'processing' && <span>{t('row.processing')}</span>}
           {item.status === 'error' && <span class="result__error">{item.error}</span>}
           {item.status === 'done' && r && (
             <>
@@ -271,8 +283,8 @@ function ResultRow({ item, showSavings, canCompare, comparing, copied, canCopy, 
               {showSavings && !r.keptOriginal && (
                 <span class={`badge ${pct <= 0 ? 'badge--good' : 'badge--warn'}`}>{describeChange(item.file.size, r.blob.size)}</span>
               )}
-              {r.success === false && <span class="badge badge--warn">Target not reached</span>}
-              {r.success === true && <span class="badge badge--good">Fits the limit</span>}
+              {r.success === false && <span class="badge badge--warn">{t('row.targetMissed')}</span>}
+              {r.success === true && <span class="badge badge--good">{t('row.targetMet')}</span>}
               {r.width && r.height && (
                 <span>
                   {r.width} × {r.height} px
@@ -295,20 +307,20 @@ function ResultRow({ item, showSavings, canCompare, comparing, copied, canCopy, 
       <div class="result__actions">
         {r && (
           <button type="button" class="btn btn--primary btn--sm" onClick={() => downloadBlob(r.blob, r.name)}>
-            Download
+            {t('row.download')}
           </button>
         )}
         {r && canCopy && (
           <button type="button" class="btn btn--secondary btn--sm" onClick={onCopy}>
-            {copied ? 'Copied!' : 'Copy'}
+            {copied ? t('row.copied') : t('row.copy')}
           </button>
         )}
         {r && canCompare && isImage && (
           <button type="button" class="btn btn--secondary btn--sm" aria-pressed={comparing} onClick={onCompare}>
-            {comparing ? 'Hide compare' : 'Compare'}
+            {comparing ? t('row.hideCompare') : t('row.compare')}
           </button>
         )}
-        <button type="button" class="btn btn--icon btn--sm" onClick={onRemove} disabled={disabled} aria-label={`Remove ${item.file.name}`}>
+        <button type="button" class="btn btn--icon btn--sm" onClick={onRemove} disabled={disabled} aria-label={t('row.remove', { name: item.file.name })}>
           ×
         </button>
       </div>

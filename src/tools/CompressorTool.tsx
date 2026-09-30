@@ -1,3 +1,4 @@
+import { t, withI18n } from '../i18n/runtime';
 import { useMemo, useRef, useState } from 'preact/hooks';
 import { useEffect } from 'preact/hooks';
 import { BatchTool } from '../components/tool-ui/BatchTool';
@@ -13,7 +14,7 @@ function sameAs(format: DetectedFormat): OutputFormat {
   return format === 'png' ? 'png' : format === 'webp' ? 'webp' : 'jpeg';
 }
 
-export default function CompressorTool() {
+function CompressorTool() {
   const [format, setFormat] = useState<FormatChoice>('same');
   const [quality, setQuality] = useState(75);
   const [colors, setColors] = useState('256');
@@ -28,45 +29,45 @@ export default function CompressorTool() {
     () => (
       <>
         <Segmented<FormatChoice>
-          label="Output format"
+          label={t('opt.outputFormat')}
           value={format}
           onChange={setFormat}
           options={[
-            { value: 'same', label: 'Same as original' },
+            { value: 'same', label: t('opt.same') },
             { value: 'jpeg', label: 'JPG' },
             { value: 'webp', label: 'WebP' },
             { value: 'png', label: 'PNG' },
           ]}
-          hint="WebP is usually 25–35% smaller than JPG at similar quality. PNG input keeps its transparency unless you pick JPG."
+          hint={t('compress.formatHint')}
         />
         <Slider
-          label="Quality (JPG / WebP)"
+          label={t('compress.quality')}
           value={quality}
           min={10}
           max={95}
           suffix="%"
           onChange={setQuality}
-          hint="70–80% is a good balance for photos. Lower = smaller file, more visible artifacts."
+          hint={t('compress.qualityHint')}
         />
         <Select
-          label="PNG colours"
+          label={t('compress.pngColors')}
           value={colors}
           onChange={setColors}
           options={[
-            { value: '256', label: '256 colours (recommended)' },
-            { value: '128', label: '128 colours' },
-            { value: '64', label: '64 colours' },
-            { value: '32', label: '32 colours (flat graphics)' },
-            { value: '0', label: 'Lossless (no colour reduction)' },
+            { value: '256', label: t('compress.colors256') },
+            { value: '128', label: t('compress.colorsN', { n: 128 }) },
+            { value: '64', label: t('compress.colorsN', { n: 64 }) },
+            { value: '32', label: t('compress.colors32') },
+            { value: '0', label: t('compress.lossless') },
           ]}
-          hint={pngSelected || format === 'same' ? 'PNG files are made smaller by reducing them to a palette of colours, which keeps transparency.' : 'Only used when the output is PNG.'}
+          hint={pngSelected || format === 'same' ? t('compress.pngHint') : t('compress.pngHintOther')}
         />
         <Select
-          label="Also limit the longest side"
+          label={t('compress.maxSide')}
           value={maxSide}
           onChange={setMaxSide}
           options={[
-            { value: 'none', label: "Don't resize" },
+            { value: 'none', label: t('compress.noResize') },
             { value: '3840', label: '3840 px (4K)' },
             { value: '2560', label: '2560 px' },
             { value: '1920', label: '1920 px (Full HD)' },
@@ -74,7 +75,7 @@ export default function CompressorTool() {
             { value: '1024', label: '1024 px' },
             { value: '800', label: '800 px' },
           ]}
-          hint="Resizing a phone photo to 1920 px often saves more than lowering quality. Smaller images are never enlarged."
+          hint={t('compress.maxSideHint')}
         />
       </>
     ),
@@ -88,12 +89,12 @@ export default function CompressorTool() {
       formatsHint="JPG, PNG, WebP, BMP"
       options={options}
       optionsKey={optionsKey}
-      actionLabel="Compress"
+      actionKey="compress"
       zipName="compressed-images.zip"
       compare
       showSavings
       wrongFormatMessage={(f) =>
-        f === 'heic' ? 'HEIC photos are already highly compressed. Use “Compress to exact KB” or “HEIC to JPG” instead.' : f === 'gif' ? 'GIF compression (with animation) is not supported yet — only JPG, PNG, WebP and BMP.' : undefined
+        f === 'heic' ? t('compress.heic') : f === 'gif' ? t('compress.gif') : undefined
       }
       process={async (item, signal) => {
         engine.current ??= new ImageEngine();
@@ -112,7 +113,7 @@ export default function CompressorTool() {
         );
         const resized = result.width !== info.width || result.height !== info.height;
         if (out === info.format && !resized && result.blob.size >= item.file.size) {
-          return keepOriginal(item.file, info.format, 'This file is already well optimised — compressing it again would make it larger, so the original was kept unchanged.');
+          return keepOriginal(item.file, info.format, t('compress.kept'));
         }
         const r = toItemResult(item.file, result, 'compressed');
         r.notes = [...animationNote(info.format, info.animated), ...r.notes];
@@ -121,3 +122,5 @@ export default function CompressorTool() {
     />
   );
 }
+
+export default withI18n(CompressorTool);

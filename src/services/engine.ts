@@ -4,6 +4,7 @@
  * thread as a fallback. Nothing here performs network requests with user data.
  */
 import { features, limits } from '../config/site';
+import { num, t } from '../i18n/runtime';
 import { FORMAT_INFO, formatLabel, readDimensions, sniffFormat, type DetectedFormat } from '../lib/format';
 import { decodeBlob, runPipeline } from './pipeline';
 import type { PipelineOptions, PipelineResult, WorkerRequest, WorkerResponse } from './types';
@@ -32,8 +33,6 @@ function looksAnimated(head: Uint8Array, format: DetectedFormat): boolean {
 
 declare const __HEIC_DECODER__: boolean;
 
-export const HEIC_UNSUPPORTED =
-  'HEIC (iPhone) photos are not supported yet. On iPhone, share or export the photo as JPG — or set Settings → Camera → Formats → “Most Compatible” so new photos are saved as JPG.';
 
 export class InputError extends Error {
   constructor(
@@ -49,31 +48,29 @@ const HEADER_BYTES = 512 * 1024;
 
 /** Reads the file header and rejects unsupported, spoofed, empty, oversized or bomb-like files. */
 export async function inspectFile(file: File, accept: readonly DetectedFormat[]): Promise<InputInfo> {
-  if (file.size === 0) throw new InputError('This file is empty.');
+  if (file.size === 0) throw new InputError(t('err.empty'));
   if (file.size > limits.maxFileBytes) {
-    throw new InputError(`This file is larger than ${Math.round(limits.maxFileBytes / 1024 / 1024)} MB, the limit for in-browser processing.`);
+    throw new InputError(t('err.fileTooLarge', { mb: Math.round(limits.maxFileBytes / 1024 / 1024) }));
   }
   let head: Uint8Array;
   try {
     head = new Uint8Array(await file.slice(0, HEADER_BYTES).arrayBuffer());
   } catch {
-    throw new InputError('This file could not be read. It may have been moved or deleted.');
+    throw new InputError(t('err.unreadable'));
   }
   const format = sniffFormat(head);
-  if (format === 'svg') throw new InputError('SVG files are not supported here, because they can contain scripts. Use a raster image (JPG, PNG, WebP…).');
-  if (format === 'pdf') throw new InputError('This is a PDF document, not an image.');
-  if (format === 'unknown') throw new InputError('This file is not a supported image. Its content does not match any known image format (the file name or extension may be wrong).');
+  if (format === 'svg') throw new InputError(t('err.svg'));
+  if (format === 'pdf') throw new InputError(t('err.pdf'));
+  if (format === 'unknown') throw new InputError(t('err.unknown'));
   if (!accept.includes(format)) {
-    if (format === 'heic' && !features.heicDecoder) throw new InputError(HEIC_UNSUPPORTED);
-    throw new InputError(`${formatLabel(format)} files are not supported by this tool.`, format);
+    if (format === 'heic' && !features.heicDecoder) throw new InputError(t('err.heicUnsupported'));
+    throw new InputError(t('err.unsupportedFormat', { format: formatLabel(format) }), format);
   }
   const dims = readDimensions(head, format);
   if (dims) {
-    if (dims.width === 0 || dims.height === 0) throw new InputError('This image reports a size of 0 pixels and is probably damaged.');
+    if (dims.width === 0 || dims.height === 0) throw new InputError(t('err.zeroPx'));
     if (dims.width * dims.height > maxDecodePixels()) {
-      throw new InputError(
-        `This image is ${dims.width.toLocaleString()} × ${dims.height.toLocaleString()} px, which is more than a browser can safely decode (${Math.round(maxDecodePixels() / 1e6)} megapixels max on this device).`,
-      );
+      throw new InputError(t('err.tooManyPixels', { w: num(dims.width), h: num(dims.height), mp: Math.round(maxDecodePixels() / 1e6) }));
     }
   }
   return { format, ...(dims ?? {}), animated: looksAnimated(head.subarray(0, 65536), format) };
@@ -121,12 +118,12 @@ export async function decodeHeic(file: Blob): Promise<ImageBitmap> {
   } catch {
     // Not natively supported — fall through to the bundled decoder.
   }
-  if (!__HEIC_DECODER__) throw new InputError(HEIC_UNSUPPORTED);
+  if (!__HEIC_DECODER__) throw new InputError(t('err.heicUnsupported'));
   const { heicTo } = await import('heic-to/csp');
   try {
     return await heicTo({ blob: file, type: 'bitmap', options: { imageOrientation: 'from-image' } });
   } catch {
-    throw new Error('This HEIC file could not be decoded. It may be damaged, or use a HEIF variant that is not supported yet.');
+    throw new Error(t('err.heicDecode'));
   }
 }
 
@@ -166,11 +163,17 @@ export class ImageEngine {
     }
 
     if (!this.useWorker) {
-      const bitmap = source instanceof ImageBitmap ? source : await decodeBlob(source);
       try {
-        return await runPipeline(bitmap, full, signal);
-      } finally {
-        bitmap.close();
+        const bitmap = source instanceof ImageBitmap ? source : await decodeBlob(source);
+        try {
+          return await runPipeline(bitmap, full, signal);
+        } finally {
+          bitmap.close();
+        }
+      } catch (error) {
+        // Pipeline errors carry message keys; translate them like worker errors.
+        if (error instanceof Error && !isAbort(error)) throw new Error(t(error.message));
+        throw error;
       }
     }
 
@@ -186,12 +189,12 @@ export class ImageEngine {
         if (event.data.id !== id) return;
         cleanup();
         if (event.data.ok) resolve(event.data.result);
-        else reject(new Error(event.data.error));
+        else reject(new Error(t(event.data.error)));
       };
       const onError = () => {
         cleanup();
         this.terminate();
-        reject(new Error('The image worker crashed — the image may be too large for this device.'));
+        reject(new Error(t('err.workerCrash')));
       };
       const onAbort = () => {
         cleanup();

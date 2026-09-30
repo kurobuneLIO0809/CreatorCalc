@@ -1,7 +1,14 @@
 ---
 import { site } from '../config/site';
-import { tools, toolPath } from '../data/tools';
-const popular = tools.filter((t) => t.popular);
+import { toolPath } from '../data/tools';
+import { localePath, localizedTools, siteT, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const tr = siteT(locale);
+const popular = localizedTools(locale).filter((t) => t.popular);
 const year = new Date().getFullYear();
 ---
 
@@ -10,27 +17,27 @@ const year = new Date().getFullYear();
     <div class="site-footer__grid">
       <div>
         <h2>{site.name}</h2>
-        <p class="muted">{site.tagline}</p>
+        <p class="muted">{tr('meta.tagline')}</p>
       </div>
-      <nav aria-label="Popular tools">
-        <h2>Popular tools</h2>
+      <nav aria-label={tr('footer.popular')}>
+        <h2>{tr('footer.popular')}</h2>
         <ul>
-          {popular.map((t) => <li><a href={toolPath(t.slug)}>{t.name}</a></li>)}
+          {popular.map((t) => <li><a href={localePath(locale, toolPath(t.slug))}>{t.name}</a></li>)}
         </ul>
       </nav>
-      <nav aria-label="Site">
-        <h2>Site</h2>
+      <nav aria-label={tr('footer.site')}>
+        <h2>{tr('footer.site')}</h2>
         <ul>
-          <li><a href="/tools">All tools</a></li>
-          <li><a href="/methodology">How it works</a></li>
-          <li><a href="/about">About</a></li>
-          <li><a href="/privacy">Privacy policy</a></li>
-          <li><a href="/terms">Terms of use</a></li>
-          <li><a href="/contact">Contact</a></li>
-          <li><a href="/third-party-licenses.txt">Open-source licences</a></li>
+          <li><a href={localePath(locale, '/tools')}>{tr('nav.allTools')}</a></li>
+          <li><a href="/methodology">{tr('nav.howItWorks')}</a></li>
+          <li><a href="/about">{tr('footer.about')}</a></li>
+          <li><a href="/privacy">{tr('footer.privacy')}</a></li>
+          <li><a href="/terms">{tr('footer.terms')}</a></li>
+          <li><a href="/contact">{tr('footer.contact')}</a></li>
+          <li><a href="/third-party-licenses.txt">{tr('footer.licences')}</a></li>
         </ul>
       </nav>
     </div>
-    <p class="site-footer__bottom">© {year} {site.name}. Images are processed in your browser and are not uploaded to our servers.</p>
+    <p class="site-footer__bottom">© {year} {site.name}. {tr('footer.notice')}</p>
   </div>
 </footer>

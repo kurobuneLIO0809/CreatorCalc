@@ -1,24 +1,34 @@
 ---
 import { site } from '../config/site';
+import { LOCALES, LOCALE_INFO, localePath, siteT, type Alternates, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+  alternates: Alternates;
+}
+const { locale, alternates } = Astro.props;
+const tr = siteT(locale);
 const path = Astro.url.pathname.replace(/\.html$/, '');
 const nav = [
-  { href: '/tools', label: 'All tools', optional: false },
-  { href: '/methodology', label: 'How it works', optional: true },
-  { href: '/privacy', label: 'Privacy', optional: true },
+  { href: localePath(locale, '/tools'), label: tr('nav.allTools'), optional: false },
+  { href: '/methodology', label: tr('nav.howItWorks'), optional: true },
+  { href: '/privacy', label: tr('nav.privacy'), optional: true },
 ];
+// Each language links to this page's translation when there is one, otherwise to that language's home page.
+const languages = LOCALES.map((l) => ({ locale: l, href: alternates[l] ?? localePath(l, '/'), ...LOCALE_INFO[l] }));
 ---
 
-<a class="skip-link" href="#main">Skip to content</a>
+<a class="skip-link" href="#main">{tr('nav.skip')}</a>
 <header class="site-header">
   <div class="container site-header__inner">
-    <a class="brand" href="/" aria-label={`${site.name} home`}>
+    <a class="brand" href={localePath(locale, '/')} aria-label={tr('nav.homeLabel')}>
       <svg viewBox="0 0 32 32" aria-hidden="true">
         <rect class="brand__bg" width="32" height="32" rx="8"></rect>
         <path class="brand__fg" d="M9 12h11l-3-3M23 20H12l3 3" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
       </svg>
       <span>{site.name}</span>
     </a>
-    <nav class="site-nav" aria-label="Main">
+    <nav class="site-nav" aria-label={tr('nav.main')}>
       {
         nav.map((item) => (
           <a href={item.href} class={item.optional ? 'nav-optional' : undefined} aria-current={path === item.href ? 'page' : undefined}>
@@ -27,6 +37,23 @@ const nav = [
         ))
       }
     </nav>
+    <details class="lang-menu">
+      <summary aria-label={`${tr('nav.language')}: ${LOCALE_INFO[locale].nativeName}`}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"></circle><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="2"></path></svg>
+        <span>{locale.toUpperCase()}</span>
+      </summary>
+      <ul>
+        {
+          languages.map((l) => (
+            <li>
+              <a href={l.href} hreflang={l.htmlLang} lang={l.htmlLang} aria-current={l.locale === locale ? 'true' : undefined}>
+                {l.nativeName}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </details>
     <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Colour theme: system">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path></svg>
     </button>

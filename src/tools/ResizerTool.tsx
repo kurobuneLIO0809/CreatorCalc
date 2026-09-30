@@ -1,3 +1,4 @@
+import { t, withI18n } from '../i18n/runtime';
 import { features } from '../config/site';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { BatchTool } from '../components/tool-ui/BatchTool';
@@ -12,18 +13,21 @@ type Mode = 'pixels' | 'percent';
 type FormatChoice = 'same' | OutputFormat;
 const MAX_DIM = 20000;
 
-const PRESETS: Array<{ value: string; label: string; w?: number; h?: number }> = [
-  { value: 'custom', label: 'Custom size' },
-  { value: '3840x2160', label: '3840 × 2160 (4K)', w: 3840, h: 2160 },
-  { value: '1920x1080', label: '1920 × 1080 (Full HD)', w: 1920, h: 1080 },
-  { value: '1280x720', label: '1280 × 720 (HD)', w: 1280, h: 720 },
-  { value: '1080x1080', label: '1080 × 1080 (square post)', w: 1080, h: 1080 },
-  { value: '1080x1350', label: '1080 × 1350 (portrait post)', w: 1080, h: 1350 },
-  { value: '1080x1920', label: '1080 × 1920 (story / reel)', w: 1080, h: 1920 },
-  { value: '800x600', label: '800 × 600', w: 800, h: 600 },
+const PRESETS: Array<{ value: string; note?: string; w?: number; h?: number }> = [
+  { value: 'custom' },
+  { value: '3840x2160', note: '4K', w: 3840, h: 2160 },
+  { value: '1920x1080', note: 'Full HD', w: 1920, h: 1080 },
+  { value: '1280x720', note: 'HD', w: 1280, h: 720 },
+  { value: '1080x1080', note: 'resize.square', w: 1080, h: 1080 },
+  { value: '1080x1350', note: 'resize.portrait', w: 1080, h: 1350 },
+  { value: '1080x1920', note: 'resize.story', w: 1080, h: 1920 },
+  { value: '800x600', w: 800, h: 600 },
 ];
 
-export default function ResizerTool() {
+const presetLabel = (p: (typeof PRESETS)[number]) =>
+  !p.w ? t('resize.custom') : `${p.w} × ${p.h}${p.note ? ` (${p.note.startsWith('resize.') ? t(p.note) : p.note})` : ''}`;
+
+function ResizerTool() {
   const [mode, setMode] = useState<Mode>('pixels');
   const [width, setWidth] = useState<number | ''>('');
   const [height, setHeight] = useState<number | ''>('');
@@ -58,18 +62,18 @@ export default function ResizerTool() {
     () => (
       <>
         <Segmented<Mode>
-          label="Resize by"
+          label={t('resize.by')}
           value={mode}
           onChange={setMode}
           options={[
-            { value: 'pixels', label: 'Pixels' },
-            { value: 'percent', label: 'Percentage' },
+            { value: 'pixels', label: t('resize.pixels') },
+            { value: 'percent', label: t('resize.percent') },
           ]}
         />
         {mode === 'pixels' ? (
           <>
             <Select
-              label="Preset"
+              label={t('resize.preset')}
               value={preset}
               onChange={(v) => {
                 setPreset(v);
@@ -79,35 +83,35 @@ export default function ResizerTool() {
                   setHeight(p.h);
                 }
               }}
-              options={PRESETS.map((p) => ({ value: p.value, label: p.label }))}
-              hint={keepAspect ? 'With “keep aspect ratio”, images are scaled to fit inside the box — nothing is cut off. Use the Crop tool for an exact shape.' : undefined}
+              options={PRESETS.map((p) => ({ value: p.value, label: presetLabel(p) }))}
+              hint={keepAspect ? t('resize.fitHint') : undefined}
             />
             <div class="field-pair">
-              <NumberField label="Width" value={width} min={1} max={MAX_DIM} suffix="px" placeholder={first && !height ? String(first.width) : 'auto'} onChange={(v) => { setWidth(v); setPreset('custom'); }} />
-              <NumberField label="Height" value={height} min={1} max={MAX_DIM} suffix="px" placeholder={first && !width ? String(first.height) : 'auto'} onChange={(v) => { setHeight(v); setPreset('custom'); }} />
+              <NumberField label={t('resize.width')} value={width} min={1} max={MAX_DIM} suffix="px" placeholder={first && !height ? String(first.width) : t('resize.auto')} onChange={(v) => { setWidth(v); setPreset('custom'); }} />
+              <NumberField label={t('resize.height')} value={height} min={1} max={MAX_DIM} suffix="px" placeholder={first && !width ? String(first.height) : t('resize.auto')} onChange={(v) => { setHeight(v); setPreset('custom'); }} />
             </div>
-            <Checkbox label="Keep aspect ratio" checked={keepAspect} onChange={setKeepAspect} hint={keepAspect ? 'Leave width or height empty to calculate it automatically.' : 'The image will be stretched to exactly this size.'} />
+            <Checkbox label={t('resize.keepAspect')} checked={keepAspect} onChange={setKeepAspect} hint={keepAspect ? t('resize.keepHint') : t('resize.stretchHint')} />
           </>
         ) : (
-          <Slider label="Scale" value={percent} min={1} max={400} suffix="%" onChange={setPercent} />
+          <Slider label={t('resize.scale')} value={percent} min={1} max={400} suffix="%" onChange={setPercent} />
         )}
-        <Checkbox label="Don't enlarge images that are already smaller" checked={noUpscale} onChange={setNoUpscale} />
+        <Checkbox label={t('resize.noUpscale')} checked={noUpscale} onChange={setNoUpscale} />
         <Segmented<FormatChoice>
-          label="Output format"
+          label={t('opt.outputFormat')}
           value={format}
           onChange={setFormat}
           options={[
-            { value: 'same', label: 'Same as original' },
+            { value: 'same', label: t('opt.same') },
             { value: 'jpeg', label: 'JPG' },
             { value: 'png', label: 'PNG' },
             { value: 'webp', label: 'WebP' },
           ]}
-          hint={`${features.heicDecoder ? 'HEIC and AVIF are' : 'AVIF is'} saved as JPG; GIF and BMP as PNG when “same” is selected.`}
+          hint={features.heicDecoder ? t('resize.formatHintHeic') : t('resize.formatHint')}
         />
-        {format !== 'png' && <Slider label="Quality (JPG / WebP)" value={quality} min={40} max={100} suffix="%" onChange={setQuality} />}
+        {format !== 'png' && <Slider label={t('compress.quality')} value={quality} min={40} max={100} suffix="%" onChange={setQuality} />}
         {preview && first && (
           <p class="tool__preview-size">
-            First image: {first.width} × {first.height} px → <strong>{preview.width} × {preview.height} px</strong>
+            {t('resize.firstImage')} {first.width} × {first.height} px → <strong>{preview.width} × {preview.height} px</strong>
           </p>
         )}
       </>
@@ -123,12 +127,12 @@ export default function ResizerTool() {
       options={options}
       optionsKey={optionsKey}
       autoRun={false}
-      actionLabel="Resize"
+      actionKey="resize"
       zipName="resized-images.zip"
       onItemsChange={onItemsChange}
       process={async (item, signal) => {
         const s = spec();
-        if (!s) throw new Error('Enter a width and/or height first.');
+        if (!s) throw new Error(t('resize.needDims'));
         engine.current ??= new ImageEngine();
         const info = item.info!;
         const out = format === 'same' ? defaultOutputFor(info.format) : format;
@@ -140,3 +144,5 @@ export default function ResizerTool() {
     />
   );
 }
+
+export default withI18n(ResizerTool);

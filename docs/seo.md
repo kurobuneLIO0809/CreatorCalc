@@ -31,7 +31,8 @@ cross-checked through recent secondary summaries (2026) and should be re-read di
 | `/` | Home: value proposition, search, popular tools, grouped tools, privacy explanation, FAQ |
 | `/tools` | All tools by category + planned categories |
 | `/tools/<task-slug>` | One tool per search intent, lowercase, hyphenated, no dates or IDs |
-| `/about`, `/methodology`, `/privacy`, `/terms`, `/contact` | Trust / E-E-A-T pages |
+| `/about`, `/methodology`, `/privacy`, `/terms`, `/contact` | Trust / E-E-A-T pages (English only) |
+| `/ja`, `/zh`, `/ko`, `/fr`, `/it` (+ `/tools`, `/tools/<slug>` under each) | Translated home, tools index and tool pages |
 
 - No trailing slashes (`build.format: 'file'`, `trailingSlash: 'never'`). Cloudflare Pages serves
   `/tools/foo` from `tools/foo.html` and 308-redirects `/tools/foo.html` and `/tools/foo/` to the clean URL
@@ -39,6 +40,28 @@ cross-checked through recent secondary summaries (2026) and should be re-read di
 - Future categories get their own prefix-free slugs under `/tools/` (e.g. `/tools/merge-pdf`), keeping one
   flat, stable URL space; category hub pages can be added later (`/pdf-tools`) without moving tools.
 - Unknown URLs return a real **404** status with a noindex page linking to popular tools.
+
+## Multilingual setup (added 2026-09-30)
+
+- **Subdirectories on one domain** (`/ja/…`), English unprefixed. This is one of the URL structures Google
+  recommends for multi-regional/multilingual sites; it keeps all link equity on one host.
+- **Language targeting only, no country targeting**: `hreflang="ja"`, `"zh-Hans"`, `"ko"`, `"fr"`, `"it"`,
+  `"en"` plus `x-default` → English. Every translated page lists itself and all its translations; the
+  post-build check fails the build if the sets are not reciprocal or if the self-reference differs from the
+  canonical. Each page's canonical points to itself (never to the English page).
+- `<html lang>`, `og:locale` and JSON-LD `inLanguage` match the page language; breadcrumbs and
+  navigation are localized. The sitemap contains `xhtml:link` alternates for the same pairs.
+- **No automatic redirects by browser language or IP** — Googlebot crawls mostly from the US without
+  `Accept-Language`, and visitors can switch with the language menu (plain links, works without JavaScript),
+  which points to the same page in the other language.
+- **No thin or duplicated translations**: a language gets a tool page only when the whole page (title,
+  description, intro, steps, use cases, specs, limitations, FAQ, UI) is translated
+  (`hasTranslation`). Titles and descriptions were written for each language's search phrasing
+  (e.g. 「KB指定で圧縮」, «Compresser à une taille précise», 按KB压缩), not literal copies. Legal/trust pages stay
+  English and are labelled as such.
+- Search-result length checks use display width (CJK characters count as 2).
+- Known gaps: OG images are English for all languages; file-size units in the tool UI stay `KB`/`MB`
+  (the French page text uses « Ko »); translations have not yet been reviewed by native speakers.
 
 ## Per-page metadata
 
@@ -131,8 +154,9 @@ escaped to prevent script-breaking injection.
   301s — do it early.
 - Head terms are dominated by very strong domains; growth depends on long-tail intents and links.
 - Brand renamed to Wrenfile (the working title collided with ≥ 7 products); do a trademark search before investing in the brand.
-- English only for now; localization must be real translation with local examples, not machine-duplicated
-  pages.
+- Translations: five languages were added at once. Until Search Console shows impressions per language,
+  the risk is low-quality signals if a translation reads unnaturally — get native-speaker review
+  (launch checklist) and apply roadmap R6 to keep, fix or remove a language.
 
 ## Pre-launch audit (2026-09-30)
 

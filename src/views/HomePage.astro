@@ -1,0 +1,151 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolGrid from '../components/ToolGrid.astro';
+import SearchBox from '../components/SearchBox.astro';
+import { site } from '../config/site';
+import { toolPath } from '../data/tools';
+import { allLocaleAlternates, LOCALE_INFO, localePath, localizedTools, siteT, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const tr = siteT(locale);
+const tools = localizedTools(locale);
+const home = localePath(locale, '/');
+const popular = tools.filter((t) => t.popular);
+const groups = [
+  { title: tr('home.groupCompress'), slugs: ['image-compressor', 'compress-image-to-kb', 'image-resizer'] },
+  { title: tr('home.groupConvert'), slugs: ['heic-to-jpg', 'webp-to-jpg', 'png-to-jpg', 'jpg-to-png', 'image-to-webp', 'image-converter'] },
+  { title: tr('home.groupEdit'), slugs: ['image-cropper', 'rotate-image', 'image-to-pdf'] },
+  { title: tr('home.groupPrivacy'), slugs: ['exif-viewer', 'remove-exif'] },
+].map((g) => ({ ...g, tools: g.slugs.map((s) => tools.find((t) => t.slug === s)).filter((t) => t !== undefined) }));
+const description = locale === 'en' ? site.description : tr('meta.homeDescription');
+
+const origin = (Astro.site?.toString() ?? '').replace(/\/+$/, '');
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: site.name,
+    url: `${origin}${home}`,
+    description,
+    inLanguage: LOCALE_INFO[locale].htmlLang,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: site.name,
+    url: `${origin}/`,
+    logo: `${origin}/icon-512.png`,
+  },
+];
+const index = tools.map((t) => ({ slug: t.slug, name: t.name, href: localePath(locale, toolPath(t.slug)) }));
+const faq = [1, 2, 3, 4, 5].map((n) => ({ q: tr(`home.q${n}` as 'home.q1'), a: tr(`home.a${n}` as 'home.a1') }));
+---
+
+<BaseLayout title={tr('meta.homeTitle')} description={description} path={home} jsonLd={jsonLd} locale={locale} alternates={allLocaleAlternates('/')}>
+  <div class="container">
+    <section class="hero">
+      <h1>{tr('home.h1')}</h1>
+      <p class="hero__lead">{tr('home.lead')}</p>
+      <ul class="hero__points">
+        <li>{tr('home.point1')}</li>
+        <li>{tr('home.point2')}</li>
+        <li>{tr('home.point3')}</li>
+        <li>{tr('home.point4')}</li>
+      </ul>
+      <SearchBox locale={locale} />
+    </section>
+
+    <section class="section" aria-labelledby="popular-heading" data-search-section>
+      <div class="section__head">
+        <h2 id="popular-heading">{tr('home.popular')}</h2>
+        <a href={localePath(locale, '/tools')}>{tr('home.allTools')}</a>
+      </div>
+      <ToolGrid tools={popular} locale={locale} searchable />
+    </section>
+
+    <section class="section" aria-labelledby="recent-heading" id="recent-section" hidden>
+      <div class="section__head">
+        <h2 id="recent-heading">{tr('home.recent')}</h2>
+      </div>
+      <ul class="tool-grid" id="recent-list"></ul>
+    </section>
+
+    {
+      groups.map((g) => (
+        <section class="section" aria-label={g.title} data-search-section>
+          <div class="section__head">
+            <h2>{g.title}</h2>
+          </div>
+          <ToolGrid tools={g.tools} locale={locale} searchable />
+        </section>
+      ))
+    }
+
+    <section class="section" aria-labelledby="privacy-heading">
+      <div class="section__head">
+        <h2 id="privacy-heading">{tr('home.privacyTitle')}</h2>
+      </div>
+      <div class="feature-grid">
+        <div class="feature">
+          <h3>{tr('home.f1Title')}</h3>
+          <p>{tr('home.f1Text')}</p>
+        </div>
+        <div class="feature">
+          <h3>{tr('home.f2Title')}</h3>
+          <p>{tr('home.f2Text')}</p>
+        </div>
+        <div class="feature">
+          <h3>{tr('home.f3Title')}</h3>
+          <p>{tr('home.f3Text')}</p>
+        </div>
+        <div class="feature">
+          <h3>{tr('home.f4Title')}</h3>
+          <p>{tr('home.f4Text')} <a href="/methodology">{tr('home.f4Link')}</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section faq" aria-labelledby="faq-heading">
+      <h2 id="faq-heading">{tr('home.faq')}</h2>
+      {
+        faq.map((f) => (
+          <details>
+            <summary>{f.q}</summary>
+            <p>{f.a}</p>
+          </details>
+        ))
+      }
+    </section>
+  </div>
+  <script type="application/json" id="tool-index" set:html={JSON.stringify(index).replace(/</g, '\\u003c')} />
+  <script>
+    // "Recently used" is read from this browser only; it contains tool names, never files.
+    try {
+      const index: Array<{ slug: string; name: string; href: string }> = JSON.parse(document.getElementById('tool-index')?.textContent ?? '[]');
+      const recent: unknown = JSON.parse(localStorage.getItem('recentTools') ?? '[]');
+      const list = document.getElementById('recent-list');
+      const section = document.getElementById('recent-section');
+      if (Array.isArray(recent) && list && section) {
+        const items = recent.map((slug) => index.find((t) => t.slug === slug)).filter((t): t is (typeof index)[number] => !!t);
+        for (const t of items) {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          a.className = 'tool-link';
+          a.href = t.href;
+          const name = document.createElement('span');
+          name.className = 'tool-link__name';
+          name.textContent = t.name;
+          a.append(name);
+          li.append(a);
+          list.append(li);
+        }
+        section.hidden = items.length === 0;
+      }
+    } catch {
+      /* storage unavailable */
+    }
+  </script>
+</BaseLayout>

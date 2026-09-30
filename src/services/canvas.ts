@@ -33,7 +33,7 @@ export function createCanvas(width: number, height: number): AnyCanvas {
 
 export function context2d(canvas: AnyCanvas): AnyContext {
   const ctx = canvas.getContext('2d') as AnyContext | null;
-  if (!ctx) throw new Error('Could not allocate an image canvas. The image may be too large for this browser.');
+  if (!ctx) throw new Error('err.canvasAlloc');
   return ctx;
 }
 
@@ -51,7 +51,7 @@ export async function canvasToBlob(canvas: AnyCanvas, type: string, quality?: nu
     blob = await new Promise<Blob | null>((resolve) => (canvas as HTMLCanvasElement).toBlob(resolve, type, quality));
   }
   if (!blob || blob.size === 0) {
-    throw new Error('This browser could not encode the image. It may be too large — try resizing it first.');
+    throw new Error('err.encode');
   }
   return blob;
 }

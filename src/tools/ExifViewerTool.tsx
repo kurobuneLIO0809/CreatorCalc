@@ -1,3 +1,5 @@
+import { getLocale, t, withI18n } from '../i18n/runtime';
+import { localePath } from '../i18n/locales';
 import { useCallback, useState } from 'preact/hooks';
 import { Dropzone } from '../components/tool-ui/Dropzone';
 import { formatBytes } from '../lib/bytes';
@@ -8,18 +10,8 @@ import { outputName } from '../lib/filename';
 
 const ACCEPT: DetectedFormat[] = ['jpeg', 'png', 'webp', 'heic', 'avif', 'tiff'];
 
-const GROUP_LABELS: Record<string, string> = {
-  ifd0: 'Image (IFD0)',
-  exif: 'Camera settings (EXIF)',
-  gps: 'GPS location',
-  interop: 'Interoperability',
-  ifd1: 'Thumbnail (IFD1)',
-  xmp: 'XMP',
-  iptc: 'IPTC',
-  icc: 'Colour profile (ICC)',
-  jfif: 'JFIF',
-  ihdr: 'PNG header',
-};
+const TRANSLATED_GROUPS = new Set(['ifd0', 'exif', 'gps', 'interop', 'ifd1', 'icc', 'ihdr']);
+const groupLabel = (id: string) => (TRANSLATED_GROUPS.has(id) ? t(`ex.g.${id}`) : id.toUpperCase());
 
 type Tags = Record<string, unknown>;
 
@@ -37,15 +29,15 @@ interface Report {
 function formatValue(value: unknown): string {
   if (value === null || value === undefined) return '';
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? '' : value.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC');
-  if (value instanceof Uint8Array || value instanceof ArrayBuffer) return `(binary data, ${value.byteLength} bytes)`;
-  if (Array.isArray(value)) return value.length > 16 ? `(${value.length} values)` : value.map(formatValue).join(', ');
+  if (value instanceof Uint8Array || value instanceof ArrayBuffer) return t('ex.binary', { n: value.byteLength });
+  if (Array.isArray(value)) return value.length > 16 ? t('ex.values', { n: value.length }) : value.map(formatValue).join(', ');
   if (typeof value === 'number') return Number.isInteger(value) ? String(value) : String(Math.round(value * 1e6) / 1e6);
   if (typeof value === 'object') {
     try {
       const json = JSON.stringify(value);
       return json.length > 300 ? `${json.slice(0, 300)}…` : json;
     } catch {
-      return '(complex value)';
+      return t('ex.complex');
     }
   }
   const text = String(value);
@@ -99,28 +91,28 @@ async function analyse(file: File): Promise<Report> {
     const rows = Object.entries(tags)
       .map(([k, v]) => [k, formatValue(v)] as [string, string])
       .filter(([, v]) => v !== '');
-    if (rows.length) out.push({ id, label: GROUP_LABELS[id] ?? id.toUpperCase(), rows });
+    if (rows.length) out.push({ id, label: groupLabel(id), rows });
   }
   const summary: Array<[string, string]> = [];
   const add = (label: string, v: unknown) => {
     const s = formatValue(v);
     if (s) summary.push([label, s]);
   };
-  add('Camera', [pick(groups, 'Make'), pick(groups, 'Model')].filter(Boolean).join(' '));
-  add('Lens', pick(groups, 'LensModel', 'Lens'));
-  add('Date taken', pick(groups, 'DateTimeOriginal', 'CreateDate', 'DateTime'));
+  add(t('ex.camera'), [pick(groups, 'Make'), pick(groups, 'Model')].filter(Boolean).join(' '));
+  add(t('ex.lens'), pick(groups, 'LensModel', 'Lens'));
+  add(t('ex.date'), pick(groups, 'DateTimeOriginal', 'CreateDate', 'DateTime'));
   const exposure = pick(groups, 'ExposureTime');
-  add('Exposure', typeof exposure === 'number' && exposure < 1 ? `1/${Math.round(1 / exposure)} s` : exposure ? `${exposure} s` : '');
-  add('Aperture', pick(groups, 'FNumber') ? `f/${pick(groups, 'FNumber')}` : '');
-  add('ISO', pick(groups, 'ISO', 'ISOSpeedRatings'));
-  add('Focal length', pick(groups, 'FocalLength') ? `${pick(groups, 'FocalLength')} mm` : '');
-  add('Software', pick(groups, 'Software'));
-  add('Author / artist', pick(groups, 'Artist', 'creator', 'Creator', 'By-line'));
-  add('Copyright', pick(groups, 'Copyright', 'rights'));
+  add(t('ex.exposure'), typeof exposure === 'number' && exposure < 1 ? `1/${Math.round(1 / exposure)} s` : exposure ? `${exposure} s` : '');
+  add(t('ex.aperture'), pick(groups, 'FNumber') ? `f/${pick(groups, 'FNumber')}` : '');
+  add(t('ex.iso'), pick(groups, 'ISO', 'ISOSpeedRatings'));
+  add(t('ex.focal'), pick(groups, 'FocalLength') ? `${pick(groups, 'FocalLength')} mm` : '');
+  add(t('ex.software'), pick(groups, 'Software'));
+  add(t('ex.author'), pick(groups, 'Artist', 'creator', 'Creator', 'By-line'));
+  add(t('ex.copyright'), pick(groups, 'Copyright', 'rights'));
   return { fileName: file.name, size: file.size, format: info.format, width: info.width, height: info.height, groups: out, gps, summary };
 }
 
-export default function ExifViewerTool() {
+function ExifViewerTool() {
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -135,7 +127,7 @@ export default function ExifViewerTool() {
     try {
       setReport(await analyse(file));
     } catch (e) {
-      setError(e instanceof InputError ? e.message : 'This file could not be read. It may be damaged.');
+      setError(e instanceof InputError ? e.message : t('ex.readError'));
     } finally {
       setBusy(false);
     }
@@ -143,7 +135,7 @@ export default function ExifViewerTool() {
 
   const asText = () => {
     if (!report) return '';
-    const lines = [`File: ${report.fileName}`, `Format: ${formatLabel(report.format)}`, `Size: ${formatBytes(report.size)}`];
+    const lines = [`${t('ex.file')}: ${report.fileName}`, `${t('ex.format')}: ${formatLabel(report.format)}`, `${t('ex.size')}: ${formatBytes(report.size)}`];
     if (report.gps) lines.push(`GPS: ${report.gps.latitude}, ${report.gps.longitude}`);
     for (const g of report.groups) {
       lines.push('', `[${g.label}]`);
@@ -156,11 +148,11 @@ export default function ExifViewerTool() {
 
   return (
     <div class="tool">
-      <Dropzone acceptAttr=".jpg,.jpeg,.png,.webp,.heic,.heif,.avif,.tif,.tiff,image/*" multiple={false} compact={!!report} hint="JPG, HEIC, PNG, WebP, AVIF, TIFF · the photo is read on your device" onFiles={onFiles} title="Drop a photo here" />
+      <Dropzone acceptAttr=".jpg,.jpeg,.png,.webp,.heic,.heif,.avif,.tif,.tiff,image/*" multiple={false} compact={!!report} hint={t('ex.hint')} onFiles={onFiles} title={t('dz.titlePhoto')} />
       <div class="visually-hidden" role="status" aria-live="polite">
-        {busy ? 'Reading metadata…' : report ? `${total} metadata fields found.` : ''}
+        {busy ? t('ex.reading') : report ? t('ex.found', { count: total }) : ''}
       </div>
-      {busy && <p class="muted">Reading metadata…</p>}
+      {busy && <p class="muted">{t('ex.reading')}</p>}
       {error && (
         <p class="notice notice--error" role="alert">
           {error}
@@ -178,21 +170,21 @@ export default function ExifViewerTool() {
                   {report.width} × {report.height} px
                 </span>
               )}
-              <span>{total} fields</span>
+              <span>{t('ex.fields', { count: total })}</span>
             </p>
           </div>
 
           {report.gps ? (
             <div class="notice notice--warn">
-              <strong>This photo contains its GPS location:</strong> {report.gps.latitude.toFixed(6)}, {report.gps.longitude.toFixed(6)}.{' '}
-              Anyone you send the original file to can see where it was taken.{' '}
+              <strong>{t('ex.gpsTitle')}</strong> {report.gps.latitude.toFixed(6)}, {report.gps.longitude.toFixed(6)}.{' '}
+              {t('ex.gpsBody')}{' '}
               <a href={`https://www.openstreetmap.org/?mlat=${report.gps.latitude.toFixed(6)}&mlon=${report.gps.longitude.toFixed(6)}#map=16/${report.gps.latitude.toFixed(6)}/${report.gps.longitude.toFixed(6)}`} target="_blank" rel="noopener noreferrer nofollow">
-                View on OpenStreetMap
+                {t('ex.osm')}
               </a>{' '}
-              (opens openstreetmap.org and shares only these coordinates).
+              {t('ex.osmNote')}
             </div>
           ) : (
-            <p class="notice notice--good">No GPS location found in this file.</p>
+            <p class="notice notice--good">{t('ex.noGps')}</p>
           )}
 
           {report.summary.length > 0 && (
@@ -207,25 +199,25 @@ export default function ExifViewerTool() {
           )}
 
           <div class="tool__actions">
-            <a class="btn btn--primary" href="/tools/remove-exif">
-              Remove this metadata
+            <a class="btn btn--primary" href={localePath(getLocale(), '/tools/remove-exif')}>
+              {t('ex.remove')}
             </a>
             <button type="button" class="btn btn--secondary" onClick={async () => { await copyText(asText()); setCopied(true); setTimeout(() => setCopied(false), 2000); }}>
-              {copied ? 'Copied!' : 'Copy as text'}
+              {copied ? t('row.copied') : t('ex.copyText')}
             </button>
             <button
               type="button"
               class="btn btn--secondary"
               onClick={() => downloadBlob(new Blob([JSON.stringify({ file: report.fileName, gps: report.gps ?? null, metadata: Object.fromEntries(report.groups.map((g) => [g.id, Object.fromEntries(g.rows)])) }, null, 2)], { type: 'application/json' }), outputName(report.fileName, 'json', 'metadata'))}
             >
-              Download JSON
+              {t('ex.downloadJson')}
             </button>
             <button type="button" class="btn btn--ghost" onClick={() => { setReport(null); setError(null); }}>
-              Start over
+              {t('batch.startOver')}
             </button>
           </div>
 
-          {report.groups.length === 0 && <p class="muted">No EXIF, XMP or IPTC metadata was found in this file.</p>}
+          {report.groups.length === 0 && <p class="muted">{t('ex.none')}</p>}
           {report.groups.map((g) => (
             <details class="exif__group" key={g.id} open={g.id === 'ifd0' || g.id === 'exif' || g.id === 'gps'}>
               <summary>
@@ -250,3 +242,5 @@ export default function ExifViewerTool() {
     </div>
   );
 }
+
+export default withI18n(ExifViewerTool);

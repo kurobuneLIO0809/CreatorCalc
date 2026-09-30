@@ -13,24 +13,29 @@ import RotateTool from '../tools/RotateTool';
 import ExifViewerTool from '../tools/ExifViewerTool';
 import RemoveExifTool from '../tools/RemoveExifTool';
 import type { ToolSlug } from '../data/tools';
+import { siteT, uiMessages, type Locale } from '../i18n';
 
 interface Props {
   slug: ToolSlug;
+  locale: Locale;
 }
-const { slug } = Astro.props;
+const { slug, locale } = Astro.props;
+// Only this locale's dictionary is serialised into the page for the island.
+const i18n = { locale, messages: uiMessages(locale) };
+const tr = siteT(locale);
 const converters = ['image-converter', 'heic-to-jpg', 'webp-to-jpg', 'png-to-jpg', 'jpg-to-png', 'image-to-webp'] as const;
 const converterId = (converters as readonly string[]).includes(slug) ? (slug as (typeof converters)[number]) : null;
 ---
 
-{slug === 'image-compressor' && <CompressorTool client:load />}
-{slug === 'compress-image-to-kb' && <TargetSizeTool client:load />}
-{slug === 'image-resizer' && <ResizerTool client:load />}
-{converterId && <ConverterTool client:load id={converterId} />}
-{slug === 'image-to-pdf' && <ImageToPdfTool client:load />}
-{slug === 'image-cropper' && <CropperTool client:load />}
-{slug === 'rotate-image' && <RotateTool client:load />}
-{slug === 'exif-viewer' && <ExifViewerTool client:load />}
-{slug === 'remove-exif' && <RemoveExifTool client:load />}
+{slug === 'image-compressor' && <CompressorTool client:load {...i18n} />}
+{slug === 'compress-image-to-kb' && <TargetSizeTool client:load {...i18n} />}
+{slug === 'image-resizer' && <ResizerTool client:load {...i18n} />}
+{converterId && <ConverterTool client:load id={converterId} {...i18n} />}
+{slug === 'image-to-pdf' && <ImageToPdfTool client:load {...i18n} />}
+{slug === 'image-cropper' && <CropperTool client:load {...i18n} />}
+{slug === 'rotate-image' && <RotateTool client:load {...i18n} />}
+{slug === 'exif-viewer' && <ExifViewerTool client:load {...i18n} />}
+{slug === 'remove-exif' && <RemoveExifTool client:load {...i18n} />}
 <noscript>
-  <p class="notice">This tool runs in your browser and needs JavaScript. Please enable JavaScript to use it.</p>
+  <p class="notice">{tr('tool.noscript')}</p>
 </noscript>

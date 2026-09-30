@@ -1,0 +1,14 @@
+---
+import ToolPage from '../../../views/ToolPage.astro';
+import { tools, type ToolSlug } from '../../../data/tools';
+import { hasTranslation, TRANSLATED_LOCALES, type Locale } from '../../../i18n';
+
+/** Only tools whose page is fully translated get a localized URL. */
+export function getStaticPaths() {
+  return TRANSLATED_LOCALES.flatMap((lang) => tools.filter((t) => hasTranslation(lang, t.slug)).map((t) => ({ params: { lang, slug: t.slug } })));
+}
+
+const { lang, slug } = Astro.params as { lang: Locale; slug: ToolSlug };
+---
+
+<ToolPage slug={slug} locale={lang} />

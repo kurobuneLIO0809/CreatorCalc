@@ -1,0 +1,76 @@
+---
+import { features, site } from '../config/site';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolGrid from '../components/ToolGrid.astro';
+import SearchBox from '../components/SearchBox.astro';
+import { categories, type CategoryId } from '../data/categories';
+import { localePath, localizedTools, siteT, allLocaleAlternates, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const tr = siteT(locale);
+const tools = localizedTools(locale);
+const catName: Record<CategoryId, string> = {
+  image: tr('tools.catImage'),
+  pdf: tr('tools.catPdf'),
+  gif: tr('tools.catGif'),
+  video: tr('tools.catVideo'),
+  audio: tr('tools.catAudio'),
+  text: tr('tools.catText'),
+};
+const description =
+  locale === 'en' && features.heicDecoder
+    ? `Every ${site.name} tool in one place: image compressor, resizer, HEIC/WebP/PNG/JPG converters, image to PDF, cropper and EXIF remover. Free and private.`
+    : tr('meta.toolsDescription');
+const path = localePath(locale, '/tools');
+
+const live = categories.filter((c) => c.status === 'live');
+const planned = categories.filter((c) => c.status === 'planned');
+const origin = (Astro.site?.toString() ?? '').replace(/\/+$/, '');
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: tr('nav.home'), item: `${origin}${localePath(locale, '/')}` },
+      { '@type': 'ListItem', position: 2, name: tr('nav.tools'), item: `${origin}${path}` },
+    ],
+  },
+];
+---
+
+<BaseLayout title={tr('meta.toolsTitle')} description={description} path={path} jsonLd={jsonLd} locale={locale} alternates={allLocaleAlternates('/tools')}>
+  <div class="container">
+    <header class="page-head">
+      <nav class="breadcrumbs" aria-label={tr('nav.breadcrumb')}>
+        <ol>
+          <li><a href={localePath(locale, '/')}>{tr('nav.home')}</a></li>
+          <li aria-current="page">{tr('nav.tools')}</li>
+        </ol>
+      </nav>
+      <h1>{tr('tools.h1')}</h1>
+      <p class="page-head__lead">{tr('tools.lead', { count: tools.length })}</p>
+    </header>
+    <SearchBox locale={locale} />
+    {
+      live.map((cat) => (
+        <section class="section" aria-labelledby={`cat-${cat.id}`} data-search-section>
+          <div class="section__head">
+            <h2 id={`cat-${cat.id}`}>{catName[cat.id]}</h2>
+            <span class="muted">{cat.id === 'image' ? tr('tools.catImageDesc') : cat.description}</span>
+          </div>
+          <ToolGrid tools={tools.filter((t) => t.category === cat.id)} locale={locale} searchable />
+        </section>
+      ))
+    }
+    <section class="section" aria-labelledby="planned-heading">
+      <h2 id="planned-heading">{tr('tools.planned')}</h2>
+      <p class="muted">{tr('tools.plannedLead')}</p>
+      <ul>
+        {planned.map((c) => <li>{catName[c.id]}</li>)}
+      </ul>
+    </section>
+  </div>
+</BaseLayout>

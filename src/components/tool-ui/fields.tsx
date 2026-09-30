@@ -1,3 +1,4 @@
+import { t } from '../../i18n/runtime';
 import type { ComponentChildren } from 'preact';
 import { useId } from 'preact/hooks';
 
@@ -183,8 +184,8 @@ interface ColorFieldProps {
 }
 
 const SWATCHES = [
-  { value: '#ffffff', label: 'White' },
-  { value: '#000000', label: 'Black' },
+  { value: '#ffffff', key: 'color.white' },
+  { value: '#000000', key: 'color.black' },
 ];
 
 export function ColorField({ label, value, onChange, hint }: ColorFieldProps) {
@@ -201,10 +202,10 @@ export function ColorField({ label, value, onChange, hint }: ColorFieldProps) {
             aria-pressed={value === s.value}
             onClick={() => onChange(s.value)}
           >
-            {s.label}
+            {t(s.key)}
           </button>
         ))}
-        <input id={id} type="color" class="color-input" value={value} onInput={(e) => onChange((e.target as HTMLInputElement).value)} aria-label="Custom colour" />
+        <input id={id} type="color" class="color-input" value={value} onInput={(e) => onChange((e.target as HTMLInputElement).value)} aria-label={t('color.custom')} />
       </div>
     </Field>
   );

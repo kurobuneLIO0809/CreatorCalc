@@ -29,6 +29,11 @@ const files = await walk(DIST);
 const html = files.filter((f) => f.endsWith('.html'));
 const titles = new Map();
 const descriptions = new Map();
+/** canonical URL → { rel, alternates: Map<hreflang, href> } for the hreflang reciprocity check. */
+const hreflangByUrl = new Map();
+
+// Search results truncate by pixel width; CJK characters are roughly twice as wide as Latin ones.
+const displayWidth = (text) => [...text].reduce((w, ch) => w + (/[\u1100-\u115f\u2e80-\ua4cf\uac00-\ud7a3\uf900-\ufaff\uff00-\uff60\uffe0-\uffe6]/.test(ch) ? 2 : 1), 0);
 
 for (const file of html) {
   const rel = relative(DIST, file);
@@ -38,6 +43,8 @@ for (const file of html) {
   const desc = src.match(/<meta name="description" content="([^"]*)"/)?.[1];
   const canonical = src.match(/<link rel="canonical" href="([^"]*)"/)?.[1];
   const h1s = (src.match(/<h1[\s>]/g) || []).length;
+  const lang = src.match(/<html lang="([^"]*)"/)?.[1];
+  if (!lang) errors.push(`${rel}: missing <html lang>`);
 
   if (!/http-equiv="content-security-policy"/i.test(src)) errors.push(`${rel}: missing CSP meta tag`);
   if (/\sstyle="/.test(src)) errors.push(`${rel}: inline style attribute (blocked by CSP)`);
@@ -47,8 +54,14 @@ for (const file of html) {
   if (noindex) continue;
   if (!canonical || !/^https:\/\//.test(canonical)) errors.push(`${rel}: canonical must be an absolute https URL`);
   if (canonical && canonical !== '/' && /\/$/.test(new URL(canonical).pathname) && new URL(canonical).pathname !== '/') errors.push(`${rel}: canonical has a trailing slash`);
-  if (title && (title.length < 20 || title.length > 70)) warnings.push(`${rel}: title length ${title.length}`);
-  if (desc && (desc.length < 70 || desc.length > 170)) warnings.push(`${rel}: description length ${desc.length}`);
+  if (title && (displayWidth(title) < 20 || displayWidth(title) > 75)) warnings.push(`${rel}: title width ${displayWidth(title)}`);
+  if (desc && (displayWidth(desc) < 70 || displayWidth(desc) > 180)) warnings.push(`${rel}: description width ${displayWidth(desc)}`);
+  const alternates = new Map([...src.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map((m) => [m[1], m[2]]));
+  if (alternates.size) {
+    if (alternates.get(lang) !== canonical) errors.push(`${rel}: hreflang for its own language (${lang}) must equal the canonical URL`);
+    if (!alternates.has('x-default')) errors.push(`${rel}: hreflang set without x-default`);
+    hreflangByUrl.set(canonical, { rel, alternates });
+  }
   if (title) titles.set(title, [...(titles.get(title) ?? []), rel]);
   if (desc) descriptions.set(desc, [...(descriptions.get(desc) ?? []), rel]);
   for (const prop of ['og:title', 'og:description', 'og:image', 'og:url', 'twitter:card']) {
@@ -74,6 +87,22 @@ for (const file of html) {
     const ok = href === '/' || known.has(href) || known.has(`${href}.html`);
     if (!ok) errors.push(`${relative(DIST, file)}: broken internal link ${href}`);
   }
+}
+
+// hreflang must be reciprocal: every page named as an alternate lists exactly the same set.
+for (const [url, { rel, alternates }] of hreflangByUrl) {
+  for (const [hl, href] of alternates) {
+    if (hl === 'x-default') continue;
+    const target = hreflangByUrl.get(href);
+    if (!target) {
+      errors.push(`${rel}: hreflang ${hl} points to ${href}, which has no hreflang set (or is not indexable)`);
+      continue;
+    }
+    const same = target.alternates.size === alternates.size && [...alternates].every(([k, v]) => target.alternates.get(k) === v);
+    if (!same) errors.push(`${rel}: hreflang set differs from ${target.rel}`);
+  }
+  if (!alternates.has('x-default')) continue;
+  if (!hreflangByUrl.has(alternates.get('x-default'))) errors.push(`${rel}: x-default ${alternates.get('x-default')} is not an indexable page (${url})`);
 }
 
 for (const [t, pages] of titles) if (pages.length > 1) errors.push(`duplicate title "${t}": ${pages.join(', ')}`);

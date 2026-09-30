@@ -8,13 +8,13 @@ import { limits } from '../config/site';
 import { searchTargetSize } from '../lib/target-size';
 import { context2d, createCanvas, releaseCanvas, type AnyCanvas } from './canvas';
 import { encodeCanvas } from './encoders';
-import type { PipelineOptions, PipelineResult } from './types';
+import type { Note, PipelineOptions, PipelineResult } from './types';
 
 export async function decodeBlob(blob: Blob): Promise<ImageBitmap> {
   try {
     return await createImageBitmap(blob, { imageOrientation: 'from-image' });
   } catch {
-    throw new Error('This file could not be decoded. It may be damaged or use a format this browser does not support.');
+    throw new Error('err.decode');
   }
 }
 
@@ -70,7 +70,7 @@ function render(src: CanvasImageSource, spec: DrawSpec, outW: number, outH: numb
 }
 
 export async function runPipeline(source: ImageBitmap, options: PipelineOptions, signal?: AbortSignal): Promise<PipelineResult> {
-  const notes: string[] = [];
+  const notes: Note[] = [];
   const bounds: Size = { width: source.width, height: source.height };
   const crop = options.crop ? clampRect(options.crop, bounds) : { x: 0, y: 0, ...bounds };
   const rotate = options.rotate ?? 0;
@@ -79,12 +79,12 @@ export async function runPipeline(source: ImageBitmap, options: PipelineOptions,
   const safe = fitScale(out, options.maxCanvasPixels, options.maxCanvasSide);
   if (safe < 1) {
     out = { width: Math.max(1, Math.floor(out.width * safe)), height: Math.max(1, Math.floor(out.height * safe)) };
-    notes.push(`Reduced to ${out.width} × ${out.height} px to stay within this browser's memory limit.`);
+    notes.push({ key: 'note.memoryLimit', params: { w: out.width, h: out.height } });
   }
 
   if (options.output.format === 'png' && (options.output.pngColors ?? 0) > 0 && out.width * out.height > limits.maxQuantizePixels) {
     options = { ...options, output: { ...options.output, pngColors: 0 } };
-    notes.push('Image too large for colour reduction in the browser — saved as lossless PNG instead.');
+    notes.push({ key: 'note.quantizeSkipped' });
   }
 
   const background = options.output.format === 'jpeg' ? options.output.background || '#ffffff' : options.output.background;
@@ -112,7 +112,7 @@ export async function runPipeline(source: ImageBitmap, options: PipelineOptions,
     );
     if (cached) releaseCanvas((cached as { canvas: AnyCanvas }).canvas);
     if (search.scale < 1) {
-      notes.push(`Dimensions reduced to ${search.result.width} × ${search.result.height} px to reach the target size.`);
+      notes.push({ key: 'note.targetDownscale', params: { w: search.result.width, h: search.result.height } });
     }
     return {
       blob: search.result.blob,

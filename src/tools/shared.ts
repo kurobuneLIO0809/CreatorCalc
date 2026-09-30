@@ -1,4 +1,5 @@
 import { features } from '../config/site';
+import { t } from '../i18n/runtime';
 import { FORMAT_INFO, formatLabel, type DetectedFormat, type OutputFormat } from '../lib/format';
 import { outputName } from '../lib/filename';
 import type { ItemResult } from '../components/tool-ui/useBatch';
@@ -21,7 +22,7 @@ export function toItemResult(file: File, result: PipelineResult, suffix = ''): O
     name: outputName(file.name, FORMAT_INFO[result.format].ext, suffix),
     width: result.width,
     height: result.height,
-    notes: result.notes,
+    notes: result.notes.map((n) => t(n.key, n.params)),
   };
 }
 
@@ -32,7 +33,7 @@ export function keepOriginal(file: File, format: DetectedFormat, note: string, e
 }
 
 export function animationNote(format: DetectedFormat | undefined, animated: boolean | undefined): string[] {
-  return animated ? [`Animated ${formatLabel(format ?? 'unknown')}: only the first frame was used.`] : [];
+  return animated ? [t('note.animated', { format: formatLabel(format ?? 'unknown') })] : [];
 }
 
-export const sameFormatMessage = (format: DetectedFormat) => `This file is already a ${formatLabel(format)} — it does not need converting.`;
+export const sameFormatMessage = (format: DetectedFormat) => t('msg.sameFormat', { format: formatLabel(format) });

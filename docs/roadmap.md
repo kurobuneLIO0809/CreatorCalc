@@ -137,11 +137,21 @@ Search the main query in a private window (and on mobile). For the top 10 organi
 Score ≥ 3 → build. 1–2 → build only if impressions ≥ 1,000 / 28 days. ≤ 0 → do not build; revisit in 3 months.
 Never copy competitor text, UI or assets — note only what users get.
 
-### R6 — Localization
+### R6 — Localization (ja, zh-Hans, ko, fr, it are live since 2026-09-30)
 
-Consider translating a page only when **≥ 20% of its impressions** come from one non-English-speaking country
-for 2 consecutive months (Search Console → Countries, filtered by page) and CTR there is below the English
-average. Translate the tool UI and content properly; no machine-generated copies.
+Measure each language separately (Search Console → Pages, filter URL contains `/ja/` etc.; compare with
+Countries):
+
+- **Keep and improve** a language when, after 8 weeks, its pages have ≥ 500 impressions/month: apply R1–R3 to
+  its queries (they are different from the English ones — e.g. 「画像 圧縮 100kb」), and add local examples
+  (Japanese 証明写真 sizes, Korean 증명사진 sizes, Italian fototessera 35×45).
+- **Fix** a language whose CTR is < 50% of the English CTR at similar positions: have a native speaker rewrite
+  the titles/descriptions first.
+- **Withdraw** a language (remove it from `LOCALES`, 301 its URLs to English in `public/_redirects`) when it
+  has < 100 impressions/month after 16 weeks — unmaintained translations are a quality risk.
+- **Add** a new language only when **≥ 20% of a page's impressions** come from one non-English-speaking country
+  for 2 consecutive months and CTR there is below the English average. Candidates: es, de, pt-BR.
+  Translate the full page and UI; no machine-generated copies.
 
 ### R7 — Weak pages
 
