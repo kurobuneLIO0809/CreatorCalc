@@ -107,3 +107,39 @@ export function centeredAspectRect(bounds: Size, aspect: number): Rect {
   }
   return clampRect({ x: (bounds.width - width) / 2, y: (bounds.height - height) / 2, width, height }, bounds);
 }
+
+/** Crop-frame handles: move the whole frame, an edge, or a corner. */
+export type Handle = 'move' | 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+/** Pure geometry for a drag gesture, in natural image pixels. */
+export function dragRect(mode: Handle, start: Rect, dx: number, dy: number, bounds: Size, ratio?: number): Rect {
+  const W = bounds.width;
+  const H = bounds.height;
+  const MIN = Math.min(8, W, H);
+  if (mode === 'move') {
+    return { x: clamp(start.x + dx, 0, W - start.width), y: clamp(start.y + dy, 0, H - start.height), width: start.width, height: start.height };
+  }
+  let x1 = start.x;
+  let y1 = start.y;
+  let x2 = start.x + start.width;
+  let y2 = start.y + start.height;
+  if (mode.includes('w')) x1 = clamp(x1 + dx, 0, x2 - MIN);
+  if (mode.includes('e')) x2 = clamp(x2 + dx, x1 + MIN, W);
+  if (mode.includes('n')) y1 = clamp(y1 + dy, 0, y2 - MIN);
+  if (mode.includes('s')) y2 = clamp(y2 + dy, y1 + MIN, H);
+  if (ratio && mode.length === 2) {
+    let w = x2 - x1;
+    let h = w / ratio;
+    const available = mode.includes('n') ? y2 : H - y1;
+    if (h > available) {
+      h = available;
+      w = h * ratio;
+    }
+    if (mode.includes('n')) y1 = y2 - h;
+    else y2 = y1 + h;
+    if (mode.includes('w')) x1 = x2 - w;
+    else x2 = x1 + w;
+  }
+  return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
+}

@@ -92,7 +92,13 @@ export function BatchTool(props: BatchToolProps) {
     return { before, after };
   }, [done]);
 
+  const zipTooLarge = totals.after > limits.maxCombinedBytes;
+
   const downloadAll = async () => {
+    if (zipTooLarge) {
+      batch.setNotice(`The results add up to ${formatBytes(totals.after)}, too much to zip safely in the browser. Please download the files individually.`);
+      return;
+    }
     const entries = await Promise.all(done.map(async (it) => ({ name: it.result!.name, data: new Uint8Array(await it.result!.blob.arrayBuffer()) })));
     const zip = buildZip(entries);
     downloadBlob(new Blob([zip as BlobPart], { type: 'application/zip' }), zipName);

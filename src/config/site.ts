@@ -31,4 +31,6 @@ export const limits = {
   maxCanvasPixelsMobileWebKit: 16_777_216,
   /** Longest side accepted by browsers for a canvas dimension. */
   maxCanvasSide: 32_767,
+  /** Everything held in memory at once when building a PDF or ZIP. */
+  maxCombinedBytes: 400 * 1024 * 1024,
 } as const;

@@ -2,6 +2,7 @@
 import { defineConfig } from 'astro/config';
 import preact from '@astrojs/preact';
 import sitemap from '@astrojs/sitemap';
+import { tools } from './src/data/tools.ts';
 
 /**
  * Canonical origin of the production site. Set SITE_URL in the Cloudflare Pages
@@ -33,6 +34,13 @@ export default defineConfig({
     preact(),
     sitemap({
       filter: (page) => !/\/404(\.html)?$/.test(page),
+      // lastmod only where we track real content changes (tool registry), never the build date.
+      serialize(item) {
+        const slug = new URL(item.url).pathname.match(/^\/tools\/([a-z0-9-]+)$/)?.[1];
+        const tool = tools.find((t) => t.slug === slug);
+        if (tool) item.lastmod = tool.updated;
+        return item;
+      },
     }),
   ],
   security: {

@@ -1,5 +1,5 @@
 import { computePlacement, MAX_PAGE_PT } from '../../src/lib/pdf-layout';
-import { centeredAspectRect, clampRect, computeResize, fitScale, normalizeRotation, rotatedSize } from '../../src/lib/resize';
+import { centeredAspectRect, clampRect, computeResize, dragRect, fitScale, normalizeRotation, rotatedSize } from '../../src/lib/resize';
 
 describe('computeResize', () => {
   const src = { width: 4000, height: 3000 };
@@ -77,5 +77,33 @@ describe('computePlacement (image to PDF)', () => {
     expect(p).toMatchObject({ pageWidth: 720, pageHeight: 360, x: 0, y: 0 });
     const huge = computePlacement(40000, 1000, 'image', 'auto', 'small');
     expect(huge.pageWidth).toBeLessThanOrEqual(MAX_PAGE_PT);
+  });
+});
+
+describe('dragRect (crop frame gestures)', () => {
+  const bounds = { width: 1000, height: 800 };
+  const start = { x: 100, y: 100, width: 400, height: 300 };
+
+  it('moves the frame and keeps it inside the image', () => {
+    expect(dragRect('move', start, 50, -20, bounds)).toEqual({ x: 150, y: 80, width: 400, height: 300 });
+    expect(dragRect('move', start, 5000, 5000, bounds)).toEqual({ x: 600, y: 500, width: 400, height: 300 });
+    expect(dragRect('move', start, -5000, 0, bounds).x).toBe(0);
+  });
+
+  it('resizes from edges and corners with a minimum size', () => {
+    expect(dragRect('e', start, 100, 0, bounds)).toEqual({ x: 100, y: 100, width: 500, height: 300 });
+    expect(dragRect('nw', start, -50, -50, bounds)).toEqual({ x: 50, y: 50, width: 450, height: 350 });
+    expect(dragRect('w', start, 1000, 0, bounds).width).toBe(8);
+    expect(dragRect('se', start, 5000, 5000, bounds)).toEqual({ x: 100, y: 100, width: 900, height: 700 });
+  });
+
+  it('keeps the aspect ratio on corner drags and stays in bounds', () => {
+    const r = dragRect('se', { x: 0, y: 0, width: 300, height: 300 }, 200, 0, bounds, 1);
+    expect(r.width).toBeCloseTo(r.height);
+    const big = dragRect('se', { x: 0, y: 0, width: 300, height: 300 }, 5000, 5000, bounds, 1);
+    expect(big).toEqual({ x: 0, y: 0, width: 800, height: 800 });
+    const nw = dragRect('nw', { x: 500, y: 400, width: 200, height: 200 }, -1000, -1000, bounds, 16 / 9);
+    expect(nw.y).toBeGreaterThanOrEqual(0);
+    expect(nw.width / nw.height).toBeCloseTo(16 / 9);
   });
 });

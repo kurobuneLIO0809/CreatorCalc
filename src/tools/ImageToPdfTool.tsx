@@ -91,8 +91,11 @@ export default function ImageToPdfTool() {
 
   const valid = pages.filter((p) => p.info && !p.error);
 
+  const totalBytes = valid.reduce((n, p) => n + p.file.size, 0);
+  const tooLarge = totalBytes > limits.maxCombinedBytes;
+
   const build = async () => {
-    if (!valid.length) return;
+    if (!valid.length || tooLarge) return;
     setBusy(true);
     setError(null);
     setPdf(null);
@@ -215,6 +218,11 @@ export default function ImageToPdfTool() {
               ]}
             />
           </div>
+          {tooLarge && (
+            <p class="notice" role="alert">
+              These images add up to {formatBytes(totalBytes)}. To avoid running out of memory, one PDF can hold at most {formatBytes(limits.maxCombinedBytes)} of images — remove some, or shrink them first with the Image Compressor.
+            </p>
+          )}
           <div class="tool__actions">
             {busy ? (
               <>
@@ -228,7 +236,7 @@ export default function ImageToPdfTool() {
               </>
             ) : (
               <>
-                <button type="button" class="btn btn--primary" disabled={!valid.length} onClick={() => void build()}>
+                <button type="button" class="btn btn--primary" disabled={!valid.length || tooLarge} onClick={() => void build()}>
                   Create PDF ({valid.length} page{valid.length === 1 ? '' : 's'})
                 </button>
                 <button type="button" class="btn btn--ghost" onClick={reset}>

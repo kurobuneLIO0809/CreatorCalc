@@ -152,7 +152,7 @@ traffic is 12M visits. This is a multi-year goal and is not guaranteed.
 |---|---|---|
 | Head terms dominated by high-authority domains | Slow traffic growth | Long-tail intent (target KB, lossless EXIF removal, WebP on iPhone), genuinely better UX, earn links from privacy/dev communities |
 | Brand name "QuickConvert" is already used by several unrelated tools (quickconvert.us, quickconvert.ink, tools.zuaqtech.com) | Brand confusion, possible trademark dispute, weak brand search | Name is centralised in `src/config/site.ts`; choose a distinctive name before buying a domain |
-| HEIC/HEVC decoding: the decoder (libheif via `heic-to`, LGPL-3.0) is shipped as a separate, unmodified file; HEVC is patent-encumbered | Licensing/patent exposure | LGPL notice + source link on `/about`; decoder isolated in one lazy module so it can be removed quickly; Safari uses the OS decoder |
+| HEIC/HEVC decoding: the decoder (libheif via `heic-to`, LGPL-3.0) is shipped as a separate file built from the unmodified library; HEVC is patent-encumbered | Licensing/patent exposure | LGPL notice + source link on `/about`; decoder isolated in one lazy module so it can be removed quickly; Safari uses the OS decoder |
 | Browser memory limits (iOS canvas ≈16.7 MP) | Crashes on huge images | Header-based dimension checks before decoding, automatic safe downscale with a visible notice, clear errors |
 | `pages.dev` subdomain without custom domain | Weaker brand/trust, harder to move later | Canonical host comes from `SITE_URL`; move to a custom domain early, with 301s |
 | Scaled-content policy | Ranking loss | One page per distinct intent, hand-written content, no per-number doorway pages |

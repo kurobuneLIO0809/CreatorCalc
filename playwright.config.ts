@@ -14,6 +14,9 @@ const executablePath = findChromium();
 // A UTF-8 locale is required for Chromium to keep non-ASCII download file names.
 const launchOptions = { executablePath, env: { ...process.env, LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' } };
 
+/** Set BASE_URL to test another server (e.g. `wrangler pages dev` or a deployed preview URL). */
+const externalBase = process.env.BASE_URL;
+
 export default defineConfig({
   testDir: 'tests/e2e',
   timeout: 90_000,
@@ -23,15 +26,17 @@ export default defineConfig({
   reporter: [['list']],
   globalSetup: './tests/e2e/global-setup.ts',
   use: {
-    baseURL: 'http://localhost:4321',
+    baseURL: externalBase || 'http://localhost:4321',
     acceptDownloads: true,
     launchOptions,
   },
-  webServer: {
-    command: 'node scripts/serve.mjs',
-    url: 'http://localhost:4321',
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: externalBase
+    ? undefined
+    : {
+        command: 'node scripts/serve.mjs',
+        url: 'http://localhost:4321',
+        reuseExistingServer: !process.env.CI,
+      },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], launchOptions } },
     {

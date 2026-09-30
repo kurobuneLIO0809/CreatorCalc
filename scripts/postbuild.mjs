@@ -17,6 +17,14 @@ async function walk(dir) {
   return out;
 }
 
+// On Cloudflare Pages production builds the canonical origin must be configured explicitly.
+const branch = process.env.CF_PAGES_BRANCH;
+const isProduction = !!branch && branch === (process.env.PRODUCTION_BRANCH || 'main');
+if (isProduction && !process.env.SITE_URL) {
+  errors.push('SITE_URL is not set. Add it in Cloudflare Pages → Settings → Environment variables (e.g. https://<project>.pages.dev).');
+}
+if (!process.env.SITE_URL) warnings.push('SITE_URL not set — canonical URLs use the default https://quickconvert.pages.dev');
+
 const files = await walk(DIST);
 const html = files.filter((f) => f.endsWith('.html'));
 const titles = new Map();
