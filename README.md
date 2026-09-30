@@ -10,7 +10,8 @@ so it can be hosted for free on Cloudflare Pages.
 - Why this product and these tools: [docs/strategy.md](docs/strategy.md)
 - SEO design: [docs/seo.md](docs/seo.md)
 - Tests and results: [docs/testing.md](docs/testing.md)
-- Long-term plan: [docs/roadmap.md](docs/roadmap.md)
+- Long-term plan and first-90-days measurement: [docs/roadmap.md](docs/roadmap.md)
+- **Before launch:** [docs/launch-checklist.md](docs/launch-checklist.md)
 
 ## Purpose
 
@@ -146,8 +147,11 @@ only on those pages, and update the privacy policy and consent handling first. S
 
 ## Configuration notes
 
-- Brand name and limits: `src/config/site.ts` ("QuickConvert" is already used by unrelated products — pick a
-  distinctive name before buying a domain).
+- Brand name and limits: `src/config/site.ts`. "QuickConvert" is already used by ≥ 7 unrelated conversion
+  products — rename before launch (shortlist in docs/strategy.md §9), then run `npm run og`.
+- `features.heicDecoder` in `src/config/site.ts`: set to `false` to ship without the LGPL/HEVC decoder
+  (removes the HEIC to JPG page and its links; see docs/strategy.md §11).
+- Licence notices for all client-side code are generated into `dist/third-party-licenses.txt` at build time.
 - Contact channel: `site.contactUrl` (currently the GitHub issue tracker; set a support email before applying
   for AdSense).
 

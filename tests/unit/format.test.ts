@@ -73,6 +73,17 @@ describe('readDimensions', () => {
     expect(readDimensions(b)).toEqual({ width: 100000, height: 100000 });
   });
 
+  it('reads AVIF/HEIF dimensions from the ispe box', async () => {
+    const avif = new Uint8Array(await (await rgbRaw(321, 123)).avif().toBuffer());
+    expect(readDimensions(avif)).toEqual({ width: 321, height: 123 });
+    // Bomb check also works for HEIF: a forged ispe claiming 60000 × 60000.
+    const forged = avif.slice();
+    const i = Buffer.from(forged).indexOf('ispe');
+    new DataView(forged.buffer).setUint32(i + 8, 60000);
+    new DataView(forged.buffer).setUint32(i + 12, 60000);
+    expect(readDimensions(forged)).toEqual({ width: 60000, height: 60000 });
+  });
+
   it('returns null for truncated input instead of throwing', () => {
     expect(readDimensions(new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00]))).toBeNull();
     expect(readDimensions(enc('RIFF\0\0\0\0WEBPVP8 '))).toBeNull();

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
-import { limits } from '../config/site';
+import { limits, site } from '../config/site';
 import { Dropzone } from '../components/tool-ui/Dropzone';
 import { Segmented, Select } from '../components/tool-ui/fields';
 import { formatBytes } from '../lib/bytes';
@@ -105,8 +105,8 @@ export default function ImageToPdfTool() {
     try {
       const { PDFDocument } = await import('pdf-lib');
       const doc = await PDFDocument.create();
-      doc.setProducer('QuickConvert (in-browser)');
-      doc.setCreator('QuickConvert');
+      doc.setProducer(`${site.name} (in-browser)`);
+      doc.setCreator(site.name);
       for (let i = 0; i < valid.length; i++) {
         if (controller.signal.aborted) throw abortError();
         const { file, info } = valid[i];

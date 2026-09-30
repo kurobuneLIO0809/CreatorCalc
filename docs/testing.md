@@ -1,17 +1,17 @@
 # Testing
 
-_Last run: 2026-09-29 (Node 22.22, Chromium 140 headless, Playwright 1.55, Vitest 5)._
+_Last run: 2026-09-30 (Node 22.22, Chromium 140 headless, Playwright 1.55, Vitest 5). Pre-launch audit rerun._
 
 ## Summary
 
 | Suite | Command | Result |
 |---|---|---|
 | Type check (Astro + TS) | `npm run check` | **0 errors, 0 warnings** (66 files) |
-| Unit tests | `npm test` | **47 / 47 passed** |
-| Build + post-build checks | `npm run build` | **OK** — 22 HTML pages validated (title, description, canonical, OG, single H1, CSP meta, no inline styles, no duplicate titles/descriptions) |
-| E2E — local Cloudflare-like server | `npm run test:e2e` | **102 passed**, 2 skipped (mobile-only tests on the desktop project) |
-| E2E — `wrangler pages dev` (Cloudflare's own asset server & `_headers`) | `BASE_URL=http://127.0.0.1:8788 npx playwright test` | **102 passed**, 2 skipped |
-| Lighthouse 12 (mobile emulation) | home, image-compressor | **100 / 100 / 100 / 100** (Perf / A11y / Best practices / SEO); LCP 1.1–1.5 s, CLS 0, TBT 0 ms |
+| Unit tests | `npm test` | **48 / 48 passed** |
+| Build + post-build checks | `npm run build` | **OK** — 22 HTML pages validated (title, description, canonical, OG, single H1, CSP meta, no inline styles, no duplicate titles/descriptions, **no broken internal links**, licence notice present) |
+| E2E — local Cloudflare-like server | `npm run test:e2e` | **104 passed**, 2 skipped (mobile-only tests on the desktop project) |
+| E2E — `wrangler pages dev` (Cloudflare's own asset server & `_headers`) | `BASE_URL=http://127.0.0.1:8788 npx playwright test` | **104 passed**, 2 skipped |
+| Lighthouse 12 (mobile emulation) | /, compress-image-to-kb, image-to-pdf, methodology | **99–100 / 100 / 100 / 100** (Perf / A11y / Best practices / SEO); LCP 1.2–1.7 s, CLS 0, TBT 0–70 ms |
 | axe-core (WCAG 2.1 A/AA) | in E2E | **0 serious/critical violations** on 8 pages + a tool with results in dark mode, desktop and mobile |
 
 ## A global "no upload" guard
@@ -54,6 +54,7 @@ production Content-Security-Policy.
 | Compress to KB | 100 KB target → ≤ 100,000 bytes and > 50 KB (quality not wasted); 20 KB on a 20 MP image → fits via downscaling; custom 300 KB; invalid 2 KB → clear error, fixed by editing the value |
 | Resizer | 800 px width → 800×600, name `photo-800x600.jpg`, PNG stays PNG; 200% with no-upscale keeps 64×48; missing dimensions → error |
 | Converters | WebP→JPG fills transparency white; JPG in WebP tool → "already a JPG"; PNG→JPG with black background; JPG→PNG applies EXIF orientation (300×200 + orientation 6 → 200×300); JPG→WebP lossy and lossless both produce real WebP; converter hub GIF/WebP/JPG → PNG; **HEIC→JPG with the bundled libheif decoder** (real HEIC sample); HEIC tool rejects JPG/PNG helpfully |
+| Robustness | truncated HEIC → clear error (no hang) and the next HEIC still converts; **main-thread fallback with `OffscreenCanvas` removed** (simulates Safari < 16.4) produces real WebP files |
 | Image to PDF | 3 images reordered → 3-page PDF, landscape A4 page, **original JPG bytes embedded unchanged**; image-sized pages incl. HEIC; bad files listed but excluded |
 | Crop / rotate / EXIF | 1:1 crop with numeric width → 500×500; keyboard moves crop frame; rotate right on an orientation-6 photo; EXIF viewer shows camera + GPS warning, "No GPS" for clean PNG; Remove EXIF → GPS gone and **pixels bit-identical** |
 
@@ -78,10 +79,45 @@ production Content-Security-Policy.
 | 8 | Web Workers do not inherit the page's `<meta>` CSP | Separate CSP header for `/_astro/*` in `_headers` |
 | 9 | Very large PDF/ZIP jobs could exhaust memory | 400 MB combined-size guard with a clear message |
 | 10 | Two meta descriptions outside the recommended length | Rewritten |
+| 11 | Safari 16.0–16.3 expose `OffscreenCanvas` without 2D support → main-thread fallback would fail | Capability check (`getContext('2d')`), not constructor check; E2E test for the fallback |
+| 12 | HEIC/AVIF files had no dimension check before decoding (bomb risk, huge 48 MP decodes) | `ispe` box parser; unit-tested incl. forged header |
+| 13 | 100 MP desktop canvas budget too high for low-RAM laptops/Android | 50 MP desktop, 24 MP when `deviceMemory` ≤ 4 GB, 16.7 MP iOS; decode limit lowered on low-RAM devices |
+| 14 | PNG colour quantization could use several hundred MB on very large images | Skipped above 20 MP with a visible note |
+| 15 | LGPL decoder shipped without licence text | Generated `/third-party-licenses.txt`, linked in footer and methodology |
+| 16 | Brand name hard-coded in 10 places (manifest, OG images, pages) | All derive from `site.name`; manifest generated at build |
 
 Environment notes (not product bugs): Playwright's path-based upload fails for file names containing `"`;
 Chromium without a UTF-8 locale renames non-ASCII downloads to "download" — tests set `LANG=C.UTF-8` and use
 in-memory uploads for exotic names.
+
+## Initial load weight (gzip, measured in the browser)
+
+| Page | HTML | JS | CSS | Fonts / images |
+|---|---|---|---|---|
+| `/` | 5.5 KB | 1.2 KB | 5.2 KB | none |
+| `/tools/image-compressor` | 8.0 KB | 27.7 KB | 5.2 KB | none |
+| `/tools/image-to-pdf` | 6.7 KB | 22.3 KB | 5.2 KB | none |
+
+Loaded only on demand: pdf-lib 158 KB, exifr 25 KB, UPNG+pako 35 KB, libwebp WASM 110–125 KB,
+HEIC decoder 712 KB (gzip). No web fonts; OG images are never loaded by pages.
+
+## iPhone Safari — static audit (no real device available)
+
+**Real iOS/Safari behaviour has NOT been verified.** WebKit is not installable in this environment, so the
+following is a code review against known WebKit behaviour, not a test result.
+
+| Area | Code path | Risk | Mitigation in code |
+|---|---|---|---|
+| WebP encoding | `encoders.ts` | Safari returns PNG from `convertToBlob({type:'image/webp'})` | Result MIME is checked; WASM libwebp fallback (exercised in Chromium via lossless mode and the no-OffscreenCanvas test) |
+| OffscreenCanvas | `canvas.ts`, `engine.ts` | 16.0–16.3: no 2D context; < 16.4: no worker pipeline | Capability detection; main-thread fallback (tested) |
+| Canvas memory | `engine.ts canvasBudget` | iOS rejects canvases > ~16.7 MP and has a global canvas memory budget | Outputs capped at 16.7 MP with a note; canvases released (`width = 0`) after use |
+| Full-size decode | `createImageBitmap` | A 48 MP photo still decodes to ~190 MB before scaling | Header size checks; **could crash old iPhones** — confirm on device |
+| EXIF orientation | `imageOrientation: 'from-image'` | Older WebKit may ignore the option | Modern Safari applies orientation by default; verify with a rotated photo |
+| HEIC | `decodeHeic` | Assumes Safari's `createImageBitmap` decodes HEIC; if not, the slow JS decoder is used | Works either way, only speed differs |
+| Downloads | `download.ts` | iOS shows a download sheet per file; object URL revoked after 60 s | ZIP for batches |
+| Clipboard | `ClipboardItem` with a Promise | Supported by Safari; permission prompts differ | Errors show "use Download instead" |
+| Touch | pointer events, `setPointerCapture`, `touch-action: none` | Supported since iOS 13 | 40 px handles on coarse pointers |
+| File picker | `accept="image/*,.heic,…"` | iOS may hand over JPEG instead of HEIC depending on settings | Both formats are accepted |
 
 ## Not yet covered (manual QA before/after launch)
 

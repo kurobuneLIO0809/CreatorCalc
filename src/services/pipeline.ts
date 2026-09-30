@@ -4,6 +4,7 @@
  * Runs inside a Web Worker when OffscreenCanvas is available, otherwise on the main thread.
  */
 import { clampRect, computeResize, fitScale, rotatedSize, type Rect, type Rotation, type Size } from '../lib/resize';
+import { limits } from '../config/site';
 import { searchTargetSize } from '../lib/target-size';
 import { context2d, createCanvas, releaseCanvas, type AnyCanvas } from './canvas';
 import { encodeCanvas } from './encoders';
@@ -79,6 +80,11 @@ export async function runPipeline(source: ImageBitmap, options: PipelineOptions,
   if (safe < 1) {
     out = { width: Math.max(1, Math.floor(out.width * safe)), height: Math.max(1, Math.floor(out.height * safe)) };
     notes.push(`Reduced to ${out.width} × ${out.height} px to stay within this browser's memory limit.`);
+  }
+
+  if (options.output.format === 'png' && (options.output.pngColors ?? 0) > 0 && out.width * out.height > limits.maxQuantizePixels) {
+    options = { ...options, output: { ...options.output, pngColors: 0 } };
+    notes.push('Image too large for colour reduction in the browser — saved as lossless PNG instead.');
   }
 
   const background = options.output.format === 'jpeg' ? options.output.background || '#ffffff' : options.output.background;

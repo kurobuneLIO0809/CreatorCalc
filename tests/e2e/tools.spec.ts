@@ -103,6 +103,18 @@ test.describe('Image Compressor', () => {
   });
 });
 
+test('main-thread fallback works without OffscreenCanvas (older Safari)', async ({ page }) => {
+  await page.addInitScript(() => {
+    // Simulate Safari < 16.4: no usable OffscreenCanvas, so no worker pipeline.
+    Object.defineProperty(window, 'OffscreenCanvas', { value: undefined, configurable: true });
+  });
+  await gotoTool(page, '/tools/image-to-webp');
+  await addFiles(page, 'photo.jpg', 'graphic.png');
+  await waitForAllDone(page, 2);
+  const { bytes } = await download(page, resultRows(page).first().getByRole('button', { name: 'Download' }));
+  expect(bytes.subarray(8, 12).toString()).toBe('WEBP');
+});
+
 test.describe('Compress to exact KB', () => {
   test('hits a 100 KB budget', async ({ page }) => {
     await gotoTool(page, '/tools/compress-image-to-kb');
@@ -255,6 +267,18 @@ test.describe('Converters', () => {
     const m = await meta(bytes);
     expect(m.format).toBe('jpeg');
     expect(m.width).toBeGreaterThan(100);
+  });
+
+  test('damaged HEIC fails with a message instead of hanging', async ({ page }) => {
+    test.skip(!existsSync(fx('example.heic')), 'sample HEIC not available');
+    const { readFileSync, writeFileSync } = await import('node:fs');
+    writeFileSync(fx('broken.heic'), readFileSync(fx('example.heic')).subarray(0, 60_000));
+    await gotoTool(page, '/tools/heic-to-jpg');
+    await addFiles(page, 'broken.heic');
+    await expect(resultRows(page).first()).toContainText(/could not be decoded|damaged/, { timeout: 60_000 });
+    // A good file still converts afterwards.
+    await addFiles(page, 'example.heic');
+    await expect(page.locator('.results > li.result--done')).toHaveCount(1, { timeout: 60_000 });
   });
 
   test('HEIC tool rejects non-HEIC files helpfully', async ({ page }) => {

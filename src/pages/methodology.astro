@@ -6,7 +6,7 @@ import { limits, site } from '../config/site';
 <PageLayout
   title="How Our Image Tools Work – Formats, Methods & Limits"
   heading="How it works"
-  description="How QuickConvert processes images in your browser: the decoders and encoders used, supported formats, quality settings, limits, and how to verify nothing is uploaded."
+  description={`How ${site.name} processes images in your browser: the decoders and encoders used, supported formats, quality settings, limits, and how to verify nothing is uploaded.`}
   path="/methodology"
   lead="Exactly what happens to your files, which technologies we use, and where the limits are."
 >
@@ -29,7 +29,7 @@ import { limits, site } from '../config/site';
   <h2 id="detection">3. File detection and safety checks</h2>
   <ul>
     <li><strong>Format detection by content.</strong> The first bytes of each file (its “magic number”) decide the format. Extensions and the MIME type reported by the operating system are ignored, so a renamed file cannot pretend to be an image.</li>
-    <li><strong>Size and dimension limits before decoding.</strong> Files larger than {limits.maxFileBytes / 1024 / 1024} MB are rejected. For JPG, PNG, GIF, WebP and BMP, the pixel dimensions are read from the header first; images over {limits.maxInputPixels / 1e6} megapixels are rejected before the browser allocates memory (protection against “decompression bombs”).</li>
+    <li><strong>Size and dimension limits before decoding.</strong> Files larger than {limits.maxFileBytes / 1024 / 1024} MB are rejected. For JPG, PNG, GIF, WebP, BMP, HEIC and AVIF, the pixel dimensions are read from the header first; images over {limits.maxInputPixels / 1e6} megapixels (less on devices that report 4 GB of RAM or less) are rejected before the browser allocates memory (protection against “decompression bombs”).</li>
     <li><strong>No SVG input.</strong> SVG files can contain scripts and external references, so they are not accepted by the raster tools.</li>
     <li><strong>Safe file names.</strong> Output names are derived from your file name with path separators, control characters, invisible bidirectional characters and reserved names removed. The extension is always set by us from the real output format.</li>
     <li><strong>Batch limits.</strong> Up to {limits.maxBatchFiles} files per batch. ZIP downloads are flat (no folders) with de-duplicated names.</li>
@@ -73,7 +73,7 @@ import { limits, site } from '../config/site';
 
   <h2 id="limits">9. Device limits</h2>
   <p>
-    Browsers limit canvas size. On iPhone and iPad (WebKit), a single canvas may not exceed about 16.7 megapixels, so larger images are scaled down to that size and a note tells you so. On desktop browsers the limit used is {limits.maxCanvasPixelsDesktop / 1e6} megapixels. If a device runs out of memory, the tool shows an error instead of producing a broken file.
+    Browsers limit canvas size. On iPhone and iPad (WebKit), a single canvas may not exceed about 16.7 megapixels, so larger images are scaled down to that size and a note tells you so. On desktop browsers the limit used is {limits.maxCanvasPixelsDesktop / 1e6} megapixels, and {limits.maxCanvasPixelsLowMemory / 1e6} megapixels on devices that report 4 GB of RAM or less. Lossy PNG colour reduction is skipped above {limits.maxQuantizePixels / 1e6} megapixels (a note is shown). If a device runs out of memory, the tool shows an error instead of producing a broken file.
   </p>
 
   <h2 id="testing">10. Testing</h2>
@@ -82,6 +82,7 @@ import { limits, site } from '../config/site';
   </p>
 
   <h2 id="open-source">11. Open-source components</h2>
+  <p>Full licence texts and source links: <a href="/third-party-licenses.txt">third-party-licenses.txt</a>.</p>
   <ul>
     <li><a href="https://github.com/Hopding/pdf-lib" rel="noopener">pdf-lib</a> (MIT) — PDF creation</li>
     <li><a href="https://github.com/jamsinclair/jSquash" rel="noopener">jSquash / libwebp</a> (Apache-2.0 / BSD) — WebP encoding</li>

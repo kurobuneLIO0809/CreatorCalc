@@ -7,7 +7,7 @@ const updated = new Date(site.legalUpdated).toLocaleDateString('en-US', { year: 
 <PageLayout
   title="Privacy Policy"
   heading="Privacy policy"
-  description="QuickConvert processes your images in your browser. We do not receive, store or see your files. Here is exactly what data is and is not collected."
+  description={`${site.name} processes your images in your browser. We do not receive, store or see your files. Here is exactly what data is and is not collected.`}
   path="/privacy"
   lead={`Last updated: ${updated}`}
 >

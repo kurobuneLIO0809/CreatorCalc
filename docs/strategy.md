@@ -142,16 +142,27 @@ iPhone, lossless metadata removal, original-quality JPEG embedding in PDFs, hone
    B2B: white-label/embeddable widget or an offline desktop/PWA build. No feature that exists today will be
    moved behind a paywall.
 
-Rough economics for the long-term goal: tool-site RPMs vary widely (roughly $2–$15 per 1,000 pageviews
-depending on geography). $10k/month would need on the order of 1–3M monthly pageviews — Photopea-level
-traffic is 12M visits. This is a multi-year goal and is not guaranteed.
+**Revenue model — measured, not assumed.** We deliberately do not state a fixed pageview target.
+Ad RPM (revenue per 1,000 pageviews) for tool sites varies by an order of magnitude with country mix,
+device mix, ad placement and season, so any number chosen before launch would be a guess. Once ads run
+(Phase 8), compute from our own data:
+
+```
+required monthly pageviews = target monthly revenue ÷ (measured page RPM ÷ 1000)
+measured page RPM          = ad revenue in period ÷ pageviews in period × 1000   (from AdSense "Page RPM")
+```
+
+Use at least 28 days of data, compute it per country group and per top page, and recompute monthly.
+Example of the calculation only (not a forecast): with a measured page RPM of R USD and a target of T USD,
+the requirement is T ÷ R × 1000 pageviews. Until then, progress is tracked with traffic and engagement
+metrics (docs/roadmap.md, "First 90 days").
 
 ## 7. Risks
 
 | Risk | Impact | Mitigation |
 |---|---|---|
 | Head terms dominated by high-authority domains | Slow traffic growth | Long-tail intent (target KB, lossless EXIF removal, WebP on iPhone), genuinely better UX, earn links from privacy/dev communities |
-| Brand name "QuickConvert" is already used by several unrelated tools (quickconvert.us, quickconvert.ink, tools.zuaqtech.com) | Brand confusion, possible trademark dispute, weak brand search | Name is centralised in `src/config/site.ts`; choose a distinctive name before buying a domain |
+| Brand name "QuickConvert" is used by at least 7 unrelated file-conversion products (see §9) | Brand confusion, possible trademark dispute, weak brand search | Rename before launch/domain purchase; the name lives in `src/config/site.ts` (+ `npm run og`) |
 | HEIC/HEVC decoding: the decoder (libheif via `heic-to`, LGPL-3.0) is shipped as a separate file built from the unmodified library; HEVC is patent-encumbered | Licensing/patent exposure | LGPL notice + source link on `/about`; decoder isolated in one lazy module so it can be removed quickly; Safari uses the OS decoder |
 | Browser memory limits (iOS canvas ≈16.7 MP) | Crashes on huge images | Header-based dimension checks before decoding, automatic safe downscale with a visible notice, clear errors |
 | `pages.dev` subdomain without custom domain | Weaker brand/trust, harder to move later | Canonical host comes from `SITE_URL`; move to a custom domain early, with 301s |
@@ -171,3 +182,114 @@ traffic is 12M visits. This is a multi-year goal and is not guaranteed.
    translations, not machine-generated thin copies.
 6. Earn links honestly: open-source the code, write technical posts (e.g. "Why WebP export on iPhone is
    broken and how we fixed it"), list on privacy-tool directories.
+
+## 9. Brand name review (2026-09-30)
+
+### Findings for "QuickConvert"
+
+Same-name products found in web search, all in *file/image conversion* — the exact category we are in:
+quickconvert.co (AI image/PDF/OCR converter), quickconvert.us (browser image converter with a paid tier),
+quickconvert.ink (Chrome extension, "no uploads" — the same pitch as ours), a QuickConvert Chrome Web Store
+extension, a macOS app "QuickConvert: File Converter", two Android apps and a Microsoft Store app
+("Any Image Converter PRO – QuickConvert"). quickconvert.com / .app / .io all resolve (registered).
+
+**Risk: high.** Brand searches would be split between unrelated products, reviews/links could be
+misattributed, and at least one of these owners could hold or apply for a trademark in the software class.
+Recommendation: **do not launch under QuickConvert.**
+
+### Method and its limits
+
+- Domain check: DNS resolution of `.com` and `.app` (RDAP/WHOIS services are blocked by this environment's
+  network policy). "Resolves" = certainly registered; "no DNS" = *probably* unregistered but could be
+  registered without DNS or reserved/premium. **Verify at a registrar before deciding.**
+- Conflict check: web search for the exact name. A trademark search (USPTO TESS, EUIPO eSearch, J-PlatPat)
+  has not been done and should be done by you for the final choice.
+
+### 20 name ideas
+
+Criteria: easy to say and spell after hearing it once, 2 syllables, not descriptive-generic, not limited to
+"convert" (future PDF/video tools), no obvious conflicts.
+
+| # | Name | .com (DNS) | .app (DNS) | Notes |
+|---|---|---|---|---|
+| 1 | **Pixwren** | no DNS | no DNS | "pix" + wren (small, quick bird); no conflicts found |
+| 2 | **Pixfinch** | no DNS | no DNS | same idea; no conflicts found |
+| 3 | **Nookpix** | no DNS | no DNS | "a little corner for your pictures"; no conflicts found |
+| 4 | **Pixlark** | no DNS | no DNS | only a GitHub username found |
+| 5 | **Wrenfile** | no DNS | no DNS | category-neutral (works for PDF/video later) |
+| 6 | Pixlocal | no DNS | no DNS | literal "local processing"; a small pixlocal.ru project exists |
+| 7 | Imgstay | no DNS | no DNS | "images stay on your device"; awkward to say |
+| 8 | Pixhearth | no DNS | no DNS | harder to spell |
+| 9 | Pixmoss | no DNS | no DNS | |
+| 10 | Pixfern | no DNS | no DNS | |
+| 11 | Owlfile | no DNS | no DNS | category-neutral |
+| 12 | Fixpixly | no DNS | no DNS | hard to spell |
+| 13 | Pixnestle | no DNS | no DNS | too long |
+| 14 | Tidypic | registered | no DNS | .com taken |
+| 15 | Pixnook | registered | no DNS | .com taken |
+| 16 | Pixshelf | registered | no DNS | .com taken |
+| 17 | Tidyframe | no DNS | no DNS | existing CMS and Python library of the same name |
+| 18 | Pixcove | registered | no DNS | .com taken |
+| 19 | Clearpix | registered | registered | taken |
+| 20 | Snapfix | registered | registered | taken, existing app |
+
+### Shortlist (5)
+
+1. **Pixwren** — short, distinctive, pronounceable in English and Japanese (ピクスレン), no conflicts found.
+2. **Pixfinch** — same qualities; slightly more common word parts.
+3. **Nookpix** — friendly, implies "your own private corner".
+4. **Pixlark** — easy, but a developer handle with the same name exists.
+5. **Wrenfile** — best if the site will soon be more about PDFs/video than images.
+
+Recommendation: **Pixwren** (or Wrenfile if you want to be category-neutral), after a registrar check and a
+trademark search. **No domain has been purchased.** Renaming = change `site.name` in
+`src/config/site.ts`, run `npm run og`, rebuild.
+
+## 10. Tool audit (2026-09-30)
+
+Legend — Useful: real task with search demand. Safari risk: behaviour depends on WebKit specifics that could
+not be tested on a real device. Memory: peak for a 12 MP photo (≈48 MB RGBA per full-size canvas).
+
+| Tool | Useful / intent | Differentiation | Browser-only? | Mobile UX | Safari risk | Memory / large images | Verdict |
+|---|---|---|---|---|---|---|---|
+| Image Compressor | High / "compress image" | batch, compare, never-bigger | Yes | results-first | Low (JPEG native; WebP via WASM) | ~2 canvases; PNG quantization skipped > 20 MP | Keep |
+| Compress to KB | High, long-tail, form users | exact byte budget, 1000-byte safe KB | Yes | presets as chips | Low | repeated encodes of one canvas; downscale steps | **Keep — strongest bet** |
+| Image Resizer | High | batch, fit/stretch, no-upscale | Yes | fields in 2 columns | Low | output capped by canvas budget (16.7 MP iOS, 24 MP low-RAM, 50 MP desktop) | Keep |
+| Image Converter | Medium (hub) | mixed batches, content sniffing | Yes | ok | TIFF only in Safari | as resizer | Keep (hub page) |
+| HEIC to JPG | Very high | native on Safari, batch/ZIP | Yes (with bundled decoder) | ok | Medium: relies on Safari's createImageBitmap for HEIC; else slow JS decoder | full-size decode ×2 (ImageData + bitmap) → bigger than others; header size check added | Keep, see HEIC decision |
+| WebP to JPG | High | background colour, PNG option | Yes | ok | Low | low | Keep (content enriched) |
+| PNG to JPG | High | background colour | Yes | ok | Low | low | Keep |
+| JPG to PNG | High, often misunderstood | honest explanation | Yes | ok | Low | PNG output large | Keep |
+| JPG/PNG to WebP | Medium | correct WebP when Safari can't encode | Yes (WASM) | ok | Medium: untested on real iOS | WASM heap ≈ 2–3× image | Keep; title no longer claims iPhone |
+| Image to PDF | Very high | JPG embedded unchanged, reorder | Yes | reorder buttons | Low | all images held until save; 400 MB guard | Keep |
+| Image Cropper | High | touch handles + exact px | Yes | 40 px handles on touch | Low–medium (pointer capture on iOS 13+) | one image | Keep |
+| Rotate & Flip | Medium | batch + preview | Yes | ok | Low | low | Keep |
+| EXIF Viewer | Medium | GPS warning, local only | Yes | tables scroll | Low | reads headers only | Keep |
+| Remove EXIF | Medium, privacy | **lossless**, lists what was removed | Yes (byte-level) | ok | Low | file size only | **Keep — brand-defining** |
+
+No tool was removed: each has a distinct intent and works without a server. Changes made from this audit:
+device-aware canvas budgets (low-RAM Android), HEIC/AVIF header size check before decoding, PNG quantization
+cap, fix for Safari 16.0–16.3 (OffscreenCanvas without 2D), softened untested iPhone claim, richer WebP page.
+
+## 11. HEIC decision (2026-09-30)
+
+**Licence.** The decoder is `heic-to` 1.5.2, which bundles libheif and libde265 — both **LGPL-3.0**. Using an
+LGPL library in a website is allowed if we (a) ship its licence text, (b) point to the corresponding source,
+and (c) let users replace it. Now done: the decoder is a separate lazily-loaded file, and
+`/third-party-licenses.txt` (generated at build, linked in the footer and methodology page) contains the
+licence texts and source links for every client-side dependency.
+
+**Patents.** HEIC photos use HEVC (H.265) compression, which is covered by patent pools (Access Advance,
+Via LA and others). Shipping a *software HEVC decoder* in a free, ad-supported website is a grey area: many
+popular sites do it and enforcement against free web decoders is not known, but it is **not risk-free and is
+not something we can resolve technically**. Safari users are unaffected (Apple's licensed OS decoder is used).
+
+**Compatibility.** Chrome, Edge and Firefox cannot decode HEIC natively on any OS; without the bundled decoder
+the HEIC page would only work in Safari. Tested: real HEIC → JPG in Chromium, damaged HEIC fails cleanly,
+HEIC inside Image to PDF. Not testable here: Safari's native path.
+
+**Decision:** keep HEIC enabled for launch (it serves one of the largest search intents), with licence
+compliance in place, and make it switchable: `features.heicDecoder = false` in `src/config/site.ts` removes the
+HEIC to JPG page, its sitemap entry and all links to it, and makes other tools show a clear
+"open it in Safari" message instead of loading the decoder. **You should decide** whether you accept the patent
+grey area; if unsure, set the flag to `false` before launch (the rest of the site is unaffected).

@@ -6,8 +6,25 @@
 export type AnyCanvas = OffscreenCanvas | HTMLCanvasElement;
 export type AnyContext = OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D;
 
+let offscreen2d: boolean | undefined;
+
+/**
+ * Safari 16.0–16.3 expose OffscreenCanvas without 2D support (getContext('2d') returns null),
+ * so availability of the constructor alone is not enough.
+ */
+function hasOffscreen2d(): boolean {
+  if (offscreen2d === undefined) {
+    try {
+      offscreen2d = typeof OffscreenCanvas !== 'undefined' && !!new OffscreenCanvas(1, 1).getContext('2d');
+    } catch {
+      offscreen2d = false;
+    }
+  }
+  return offscreen2d;
+}
+
 export function createCanvas(width: number, height: number): AnyCanvas {
-  if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(width, height);
+  if (hasOffscreen2d() || typeof document === 'undefined') return new OffscreenCanvas(width, height);
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;

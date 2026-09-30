@@ -1,6 +1,6 @@
 # SEO design
 
-_Last updated: 2026-09-29._
+_Last updated: 2026-09-30 (pre-launch audit)._
 
 ## Principles (from Google Search Central guidance)
 
@@ -133,3 +133,23 @@ escaped to prevent script-breaking injection.
 - Brand name collision ("QuickConvert") weakens branded search.
 - English only for now; localization must be real translation with local examples, not machine-duplicated
   pages.
+
+## Pre-launch audit (2026-09-30)
+
+Guidance re-checked via 2026 coverage of Google's March, June, August and September 2026 spam updates: they
+enforce the existing policies (scaled content abuse, expired-domain and site-reputation abuse) more strictly;
+"people-first" content and non-commodity value remain the standard. developers.google.com itself was not
+reachable from this environment — re-read the primary pages before launch.
+
+| Check | Method | Result |
+|---|---|---|
+| Thin content | Main-content word count per page | Tool pages 485–888 words of task-specific text *plus* a working tool; thinnest (WebP to JPG) was enriched with two practical answers. Contact/404 are short by nature (404 is noindex) |
+| Duplicate content | 5-word-shingle Jaccard similarity between all tool pages | Max 0.16 (WebP→JPG vs PNG→JPG), caused by shared spec rows and related links. No near-duplicates |
+| Pages made only for ranking | Manual review | None: every URL has its own working tool and distinct intent; no per-number or per-city pages; planned categories are text on /tools, not empty pages |
+| canonical | E2E: canonical path equals request path on all 21 pages | OK; production build refuses to run without `SITE_URL` |
+| noindex | 404 and preview branches noindex; all others indexable | OK |
+| sitemap | E2E + wrangler | 21 URLs, 404 excluded, lastmod only from the registry, disabled tools removed automatically |
+| 404 | E2E + `wrangler pages dev` | Real 404 status, `.html` and trailing-slash URLs 308 to the canonical URL |
+| Internal links | New post-build check | 0 broken links, no links to `.html` URLs |
+| Titles / descriptions | Post-build length + uniqueness check | All unique; titles 22–63 chars, descriptions 131–166 chars |
+| Unverifiable claims | Manual review | "Works on iPhone Too" removed from a title (not device-tested) |

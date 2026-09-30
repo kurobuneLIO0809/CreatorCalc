@@ -3,7 +3,7 @@
  * HEIC when needed, and runs the pipeline in a Web Worker (cancellable) or on the main
  * thread as a fallback. Nothing here performs network requests with user data.
  */
-import { limits } from '../config/site';
+import { features, limits } from '../config/site';
 import { FORMAT_INFO, formatLabel, readDimensions, sniffFormat, type DetectedFormat } from '../lib/format';
 import { decodeBlob, runPipeline } from './pipeline';
 import type { PipelineOptions, PipelineResult, WorkerRequest, WorkerResponse } from './types';
@@ -64,9 +64,9 @@ export async function inspectFile(file: File, accept: readonly DetectedFormat[])
   const dims = readDimensions(head, format);
   if (dims) {
     if (dims.width === 0 || dims.height === 0) throw new InputError('This image reports a size of 0 pixels and is probably damaged.');
-    if (dims.width * dims.height > limits.maxInputPixels) {
+    if (dims.width * dims.height > maxDecodePixels()) {
       throw new InputError(
-        `This image is ${dims.width.toLocaleString()} × ${dims.height.toLocaleString()} px, which is more than a browser can safely decode (${Math.round(limits.maxInputPixels / 1e6)} megapixels max).`,
+        `This image is ${dims.width.toLocaleString()} × ${dims.height.toLocaleString()} px, which is more than a browser can safely decode (${Math.round(maxDecodePixels() / 1e6)} megapixels max on this device).`,
       );
     }
   }
@@ -79,11 +79,25 @@ export function isMobileWebKit(): boolean {
   return /iP(hone|ad|od)/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
 }
 
+/** Device RAM in GB when the browser reports it (Chromium), else undefined. */
+function deviceMemory(): number | undefined {
+  const m = typeof navigator !== 'undefined' ? (navigator as Navigator & { deviceMemory?: number }).deviceMemory : undefined;
+  return typeof m === 'number' && m > 0 ? m : undefined;
+}
+
 export function canvasBudget() {
-  return {
-    maxCanvasPixels: isMobileWebKit() ? limits.maxCanvasPixelsMobileWebKit : limits.maxCanvasPixelsDesktop,
-    maxCanvasSide: limits.maxCanvasSide,
-  };
+  let maxCanvasPixels: number = limits.maxCanvasPixelsDesktop;
+  if (isMobileWebKit()) maxCanvasPixels = limits.maxCanvasPixelsMobileWebKit;
+  else if ((deviceMemory() ?? 8) <= 4) maxCanvasPixels = limits.maxCanvasPixelsLowMemory;
+  return { maxCanvasPixels, maxCanvasSide: limits.maxCanvasSide };
+}
+
+/** Largest image we let the browser decode at full size on this device. */
+export function maxDecodePixels(): number {
+  const mem = deviceMemory();
+  if (mem !== undefined && mem <= 2) return 40_000_000;
+  if (mem !== undefined && mem <= 4) return 80_000_000;
+  return limits.maxInputPixels;
 }
 
 function supportsWorkerPipeline(): boolean {
@@ -100,6 +114,9 @@ export async function decodeHeic(file: Blob): Promise<ImageBitmap> {
     return await createImageBitmap(file, { imageOrientation: 'from-image' });
   } catch {
     // Not natively supported — fall through to the bundled decoder.
+  }
+  if (!features.heicDecoder) {
+    throw new Error('This browser cannot open HEIC files. Open the photo in Safari (Mac, iPhone, iPad), or set your iPhone camera to “Most Compatible” to save JPGs.');
   }
   const { heicTo } = await import('heic-to/csp');
   try {

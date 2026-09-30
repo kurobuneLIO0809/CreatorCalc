@@ -150,9 +150,27 @@ function webpDimensions(b: Uint8Array): Dimensions | null {
 }
 
 /**
+ * HEIC/AVIF: image sizes are stored in 'ispe' (image spatial extent) properties inside the
+ * 'meta' box, which sits near the start of the file. Grid images have one ispe per tile plus one
+ * for the full canvas, so the largest one is the output size.
+ */
+function heifDimensions(b: Uint8Array): Dimensions | null {
+  let best: Dimensions | null = null;
+  for (let i = 4; i + 16 <= b.length; i++) {
+    if (b[i] !== 0x69 || b[i + 1] !== 0x73 || b[i + 2] !== 0x70 || b[i + 3] !== 0x65) continue; // "ispe"
+    const size = u32be(b, i - 4);
+    if (size !== 20) continue;
+    const width = u32be(b, i + 8);
+    const height = u32be(b, i + 12);
+    if (width > 0 && height > 0 && (!best || width * height > best.width * best.height)) best = { width, height };
+  }
+  return best;
+}
+
+/**
  * Reads pixel dimensions from the file header without decoding the image.
  * Used to reject decompression bombs before the browser allocates memory.
- * Returns null when the format has no cheap header parser (HEIC, AVIF, TIFF…).
+ * Returns null when the format has no cheap header parser (TIFF, ICO…) or the header is incomplete.
  */
 export function readDimensions(bytes: Uint8Array, format: DetectedFormat = sniffFormat(bytes)): Dimensions | null {
   const b = bytes;
@@ -170,6 +188,9 @@ export function readDimensions(bytes: Uint8Array, format: DetectedFormat = sniff
       return jpegDimensions(b);
     case 'webp':
       return webpDimensions(b);
+    case 'heic':
+    case 'avif':
+      return heifDimensions(b);
     default:
       return null;
   }

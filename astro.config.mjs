@@ -66,6 +66,8 @@ export default defineConfig({
     build: {
       // Keep WASM and worker files as separate cacheable assets.
       assetsInlineLimit: 0,
+      // The HEIC decoder (~2.9 MB raw, ~0.7 MB gzip) is lazily loaded only when a HEIC file is opened.
+      chunkSizeWarningLimit: 3200,
     },
     worker: {
       format: 'es',

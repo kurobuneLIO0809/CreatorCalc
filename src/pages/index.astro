@@ -11,7 +11,7 @@ const groups = [
   { title: 'Convert formats', slugs: ['heic-to-jpg', 'webp-to-jpg', 'png-to-jpg', 'jpg-to-png', 'image-to-webp', 'image-converter'] },
   { title: 'Edit & combine', slugs: ['image-cropper', 'rotate-image', 'image-to-pdf'] },
   { title: 'Privacy', slugs: ['exif-viewer', 'remove-exif'] },
-].map((g) => ({ ...g, tools: g.slugs.map((s) => tools.find((t) => t.slug === s)!) }));
+].map((g) => ({ ...g, tools: g.slugs.map((s) => tools.find((t) => t.slug === s)).filter((t) => t !== undefined) }));
 
 const origin = (Astro.site?.toString() ?? '').replace(/\/+$/, '');
 const jsonLd = [
@@ -33,7 +33,7 @@ const jsonLd = [
 const index = tools.map((t) => ({ slug: t.slug, name: t.name, href: toolPath(t.slug) }));
 const faq = [
   {
-    q: 'Is QuickConvert really free?',
+    q: `Is ${site.name} really free?`,
     a: 'Yes. All tools are free to use without an account, watermark or daily limit. Because processing happens on your device, serving the site costs us very little.',
   },
   {

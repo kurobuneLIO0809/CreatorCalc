@@ -1,3 +1,4 @@
+import { features } from '../config/site';
 import type { CategoryId } from './categories';
 
 export type ToolSlug =
@@ -40,7 +41,7 @@ export interface ToolMeta {
   updated: string;
 }
 
-export const tools: ToolMeta[] = [
+const allTools: ToolMeta[] = [
   {
     slug: 'image-compressor',
     category: 'image',
@@ -156,8 +157,8 @@ export const tools: ToolMeta[] = [
     category: 'image',
     name: 'JPG/PNG to WebP',
     h1: 'Convert JPG & PNG to WebP',
-    title: 'JPG & PNG to WebP Converter – Works on iPhone Too',
-    description: 'Convert JPG and PNG images to WebP for faster websites. Lossy or lossless, batch conversion, true WebP output even on iPhone/Safari. No upload.',
+    title: 'JPG & PNG to WebP Converter – Lossy or Lossless, Free',
+    description: 'Convert JPG and PNG images to WebP for faster websites. Lossy or lossless, batch conversion, real WebP output even where Safari cannot encode it. No upload.',
     tagline: 'Create lightweight WebP images for websites and blogs.',
     icon: 'convert',
     searchTerms: ['webp', 'jpg to webp', 'png to webp', 'website', 'page speed', 'optimize'],
@@ -232,6 +233,10 @@ export const tools: ToolMeta[] = [
     updated: '2026-09-29',
   },
 ];
+
+/** Tools that depend on an optional feature are only published when it is enabled. */
+const isEnabled = (t: ToolMeta) => t.slug !== 'heic-to-jpg' || features.heicDecoder;
+export const tools: ToolMeta[] = allTools.filter(isEnabled).map((t) => ({ ...t, related: t.related.filter((r) => allTools.some((x) => x.slug === r && isEnabled(x))) }));
 
 export const toolBySlug = new Map(tools.map((t) => [t.slug, t]));
 

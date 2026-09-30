@@ -11,6 +11,10 @@ const { tools } = await import('../src/data/tools.ts').catch(async () => {
   return { tools: entries };
 });
 
+// Brand name comes from src/config/site.ts so a rename only needs `npm run og` afterwards.
+const siteSrc = await (await import('node:fs/promises')).readFile(new URL('../src/config/site.ts', import.meta.url), 'utf8');
+const brand = siteSrc.match(/name: '([^']+)'/)[1];
+
 const executablePath = process.env.PW_CHROMIUM_PATH || undefined;
 const browser = await chromium.launch(executablePath ? { executablePath } : {});
 const page = await browser.newPage({ viewport: { width: 1200, height: 630 } });
@@ -26,7 +30,7 @@ const template = (title, subtitle) => `<!doctype html><html><head><meta charset=
   h1{font-size:${title.length > 28 ? 72 : 88}px;line-height:1.05;margin:0 0 20px;letter-spacing:-1.5px;max-width:1000px}
   p{font-size:34px;margin:0;color:#3a4652;max-width:1000px}
   .pill{display:inline-block;margin-top:28px;padding:10px 22px;border-radius:999px;background:#0d7a6f;color:#fff;font-size:26px;font-weight:600}
-</style></head><body><div class="brand">${logo}QuickConvert</div><div><h1>${esc(title)}</h1><p>${esc(subtitle)}</p>
+</style></head><body><div class="brand">${logo}${esc(brand)}</div><div><h1>${esc(title)}</h1><p>${esc(subtitle)}</p>
 <span class="pill">Free · No sign-up · Files stay on your device</span></div></body></html>`;
 
 const jobs = [{ file: 'default', title: 'Free image tools', subtitle: 'Compress, resize, convert HEIC & WebP, make PDFs — right in your browser.' }, ...tools.map((t) => ({ file: t.slug, title: t.name, subtitle: t.tagline }))];

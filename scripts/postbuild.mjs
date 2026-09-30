@@ -65,10 +65,21 @@ for (const file of html) {
   }
 }
 
+// Internal links must resolve to a built page or file (no broken links, no links to .html URLs).
+const known = new Set(files.map((f) => '/' + relative(DIST, f)));
+for (const file of html) {
+  const src = await readFile(file, 'utf8');
+  for (const [, href] of src.matchAll(/href="(\/[^"#?]*)/g)) {
+    if (href.endsWith('.html')) errors.push(`${relative(DIST, file)}: link to .html URL ${href}`);
+    const ok = href === '/' || known.has(href) || known.has(`${href}.html`);
+    if (!ok) errors.push(`${relative(DIST, file)}: broken internal link ${href}`);
+  }
+}
+
 for (const [t, pages] of titles) if (pages.length > 1) errors.push(`duplicate title "${t}": ${pages.join(', ')}`);
 for (const [d, pages] of descriptions) if (pages.length > 1) errors.push(`duplicate description: ${pages.join(', ')}`);
 
-for (const required of ['robots.txt', 'sitemap-index.xml', '_headers', '404.html', 'favicon.svg']) {
+for (const required of ['robots.txt', 'sitemap-index.xml', '_headers', '404.html', 'favicon.svg', 'site.webmanifest', 'third-party-licenses.txt']) {
   if (!files.some((f) => relative(DIST, f) === required)) errors.push(`missing ${required}`);
 }
 

@@ -188,14 +188,14 @@ export const content: Record<ToolSlug, ToolContent> = {
     specs: [
       ['Input formats', 'HEIC, HEIF (still images; the primary image of a burst/Live Photo)'],
       ['Output formats', 'JPG (default) or PNG'],
-      ['Decoder', 'Browser/OS decoder when available (Safari); otherwise libheif compiled to JavaScript, loaded on demand (~3 MB, cached afterwards)'],
+      ['Decoder', 'Browser/OS decoder when available (Safari); otherwise libheif compiled to JavaScript, loaded on demand (about 0.7 MB compressed download, cached afterwards)'],
       ['Orientation', 'Rotation stored in the HEIC file is applied, so photos stay upright'],
       ['Metadata', 'Output contains no EXIF/GPS metadata'],
       PRIVACY_SPEC,
       SIZE_SPEC,
     ],
     limits: [
-      'The first conversion in Chrome/Edge/Firefox downloads the decoder (~3 MB), which can take a few seconds on slow connections.',
+      'The first conversion in Chrome/Edge/Firefox downloads the decoder (about 0.7 MB), which can take a few seconds on slow connections.',
       'Colours are converted to standard sRGB; iPhone photos captured in Display P3 may look marginally less vivid on wide-gamut displays.',
       'Only the main image is converted — depth maps, Live Photo video and burst frames are not.',
       'Very large HEIC images (e.g. 48 MP) are scaled down on iPhone/iPad to fit browser memory limits; a note is shown when this happens.',
@@ -240,6 +240,8 @@ export const content: Record<ToolSlug, ToolContent> = {
       { q: 'Why do websites use WebP?', a: 'WebP files are usually 25–35% smaller than JPGs of similar quality, so pages load faster. All current browsers support it, but some desktop software still does not.' },
       { q: 'Does converting WebP to JPG reduce quality?', a: 'JPG is lossy, so there is a small loss; at 90% quality it is not noticeable for typical images. Choose PNG output for a lossless copy.' },
       { q: 'Can I convert WebP to PNG here?', a: 'Yes. Select PNG under “Convert to”. Transparency is preserved.' },
+      { q: 'Can I convert WebP without any website?', a: 'Yes. On Windows, open the image in Paint and use “Save as → JPEG”. On a Mac, open it in Preview and use File → Export → JPEG. This tool is faster for many files at once and lets you choose the background colour for transparent areas.' },
+      { q: 'Why does “Save image as” in my browser give me a WebP?', a: 'The website sends WebP to browsers that support it, and the browser saves what it received. Browsers have no setting to change this, so converting the saved file is the practical fix.' },
     ],
   },
 
@@ -343,7 +345,7 @@ export const content: Record<ToolSlug, ToolContent> = {
     faq: [
       { q: 'Lossy or lossless WebP — which should I use?', a: 'Lossy for photos (much smaller). Lossless for screenshots, logos, icons and illustrations with flat colours and sharp edges.' },
       { q: 'Does WebP work in all browsers?', a: 'Yes — all current versions of Chrome, Edge, Firefox and Safari display WebP. Very old browsers (e.g. Internet Explorer) do not.' },
-      { q: 'Does this really create WebP on iPhone?', a: 'Yes. When the browser cannot encode WebP, the tool uses a WebAssembly build of Google’s libwebp that runs locally on your device.' },
+      { q: 'Does this create real WebP files in Safari and on iPhone?', a: 'That is what it is designed for: Safari cannot encode WebP itself and returns a PNG instead, so the tool checks every result and, when it is not WebP, encodes it with a WebAssembly build of Google’s libwebp that runs locally on your device.' },
     ],
   },
 
